@@ -81,6 +81,9 @@ const StackConfiguracion = () => {
   );
 };
 
+
+
+
 // ---------- NAVEGACION PRINCIPAL ----------
 const NavegacionPrincipal = () => {
   return (
@@ -149,12 +152,18 @@ const NavegacionPrincipal = () => {
 
 // ---------- APP ----------
 export default function App() {
+
+const [logueado, setLogueado] = React.useState(false);
+
+
+
+
   return (
     <AppProvider>
       <NavigationContainer>
         <Stack.Navigator
           screenOptions={{ headerShown: false }}
-          initialRouteName="Login"
+          initialRouteName={logueado ? 'Principal' : 'Login'}
         >
           <Stack.Screen
             name="Login"
