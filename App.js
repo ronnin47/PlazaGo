@@ -1,32 +1,22 @@
+
 import 'react-native-gesture-handler';
 import * as React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { AppProvider } from './provider/AppProvider';
-//icons
 import { Ionicons } from '@expo/vector-icons';
 
-// navegadores
+import { PantallaHome } from './components/pantallaHome';
+import { PantallaMisPuestos } from './components/pantallaMisPuestos';
+import { PantallaConfiguracion } from './components/pantallaConfiguracion';
+import { PantallaLogin } from './components/pantallaLogin';
+
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
-
-// componentes
-import { PantallaHome } from './components/pantallaHome';
-import {PantallaMisPuestos} from './components/pantallaMisPuestos';
-import {PantallaConfiguracion} from './components/pantallaConfiguracion';
-
-
-
-
-
-
 // ---------- STACK HOME ----------
 const StackHome = () => {
-
-//'#2d2c30',
-//  borderTopColor: '#E0D6C3',
   return (
     <Stack.Navigator
       screenOptions={{
@@ -43,13 +33,11 @@ const StackHome = () => {
         component={PantallaHome}
         options={{ title: 'Inicio' }}
       />
-
-    
- 
     </Stack.Navigator>
   );
 };
 
+// ---------- STACK MIS PUESTOS ----------
 const StackMisPuestos = () => {
   return (
     <Stack.Navigator
@@ -67,12 +55,11 @@ const StackMisPuestos = () => {
         component={PantallaMisPuestos}
         options={{ title: 'Mis Recetas' }}
       />
-  
-
     </Stack.Navigator>
   );
 };
 
+// ---------- STACK CONFIGURACION ----------
 const StackConfiguracion = () => {
   return (
     <Stack.Navigator
@@ -85,116 +72,101 @@ const StackConfiguracion = () => {
         headerTintColor: 'white',
       }}
     >
-
-
       <Stack.Screen
         name="Configuracion"
         component={PantallaConfiguracion}
         options={{ title: 'Configuración' }}
       />
-
     </Stack.Navigator>
   );
 };
 
+// ---------- NAVEGACION PRINCIPAL ----------
+const NavegacionPrincipal = () => {
+  return (
+    <Tab.Navigator
+      screenOptions={{
+        headerShown: false,
+        tabBarStyle: {
+          backgroundColor: '#2d2c30',
+          borderTopColor: '#E0D6C3',
+          borderTopWidth: 1,
+        },
+        tabBarActiveTintColor: '#E67E22',
+        tabBarInactiveTintColor: '#fcfbfb',
+      }}
+    >
+      <Tab.Screen
+        name="StackHome"
+        component={StackHome}
+        options={{
+          title: 'Inicio',
+          tabBarLabel: 'Inicio',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'home' : 'home-outline'}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
 
+      <Tab.Screen
+        name="StackMisPuestos"
+        component={StackMisPuestos}
+        options={{
+          title: 'Mis Puestos',
+          tabBarLabel: 'Mis Puestos',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'pizza' : 'pizza-outline'}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
 
-
-
-
+      <Tab.Screen
+        name="StackConfiguracion"
+        component={StackConfiguracion}
+        options={{
+          title: 'Configuración',
+          tabBarLabel: 'Configuración',
+          tabBarIcon: ({ color, size, focused }) => (
+            <Ionicons
+              name={focused ? 'settings' : 'settings-outline'}
+              size={size}
+              color={color}
+            />
+          ),
+        }}
+      />
+    </Tab.Navigator>
+  );
+};
 
 // ---------- APP ----------
 export default function App() {
-
-
-
-
-
-
-
   return (
     <AppProvider>
-
       <NavigationContainer>
+        <Stack.Navigator
+          screenOptions={{ headerShown: false }}
+          initialRouteName="Login"
+        >
+          <Stack.Screen
+            name="Login"
+            component={PantallaLogin}
+          />
 
-
-          <Tab.Navigator
-            screenOptions={{
-              headerShown: false,
-
-              tabBarStyle: {
-      backgroundColor: '#2d2c30',
-      borderTopColor: '#E0D6C3',
-      borderTopWidth: 1,
-                },
-                tabBarActiveTintColor: '#E67E22',
-                tabBarInactiveTintColor: '#fcfbfb',
-            }}
-          >
-
-          
-          <Tab.Screen
-              name="StackHome"
-              component={StackHome} 
-              options={{ 
-                title: 'Inicio',
-                tabBarLabel: 'Inicio',
-                tabBarIcon: ({ color, size, focused }) => (
-                  <Ionicons
-                    name={focused ? 'home' : 'home-outline'}
-                    size={size}
-                    color={color}
-                  />
-                ),
-              }}
-            />
-
-
-
-
-
-            <Tab.Screen
-              name="StackMisPuestos"
-              component={StackMisPuestos}
-              options={{ title: 'Mis Puestos',
-                tabBarLabel: 'Mis Puestos',
-                tabBarIcon: ({ color, size, focused }) => (
-              <Ionicons
-                name={focused ? 'pizza' : 'pizza-outline'}
-                size={size}
-                color={color}
-              />
-            ),
-              }}
-            />
-
-
-
-
-
-
-            <Tab.Screen
-              name="StackConfiguracion"
-              component={StackConfiguracion}
-              options={{ title: 'Configuración',
-                tabBarLabel: 'Configuración',
-                tabBarIcon: ({ color, size, focused }) => (
-              <Ionicons
-                name={focused ? 'settings' : 'settings-outline'}
-                size={size}
-                color={color}
-              />
-            ),
-              }}
-            />
-
-          </Tab.Navigator>
-    
-  
-    
+          <Stack.Screen
+            name="Principal"
+            component={NavegacionPrincipal}
+          />
+        </Stack.Navigator>
       </NavigationContainer>
-
-    </AppProvider> 
+    </AppProvider>
   );
 }
-
