@@ -13,10 +13,7 @@ import { AppContext } from '../provider/AppProvider';
 
 export const PantallaConfiguracion = () => {
 
-  const {
-    usuario,
-
-  } = useContext(AppContext);
+  const { usuario, cerrarSesion } = useContext(AppContext);
 
 
 
@@ -46,13 +43,20 @@ export const PantallaConfiguracion = () => {
 
 
           <Text style={styles.textoOpcion}>
-            👤 Usuario: {usuario}
+            👤 Usuario: {usuario ? usuario.nombre : 'Usuario'}
           </Text>
     
 
 
 
-
+<TouchableOpacity
+  style={styles.botonCerrarSesion}
+  onPress={cerrarSesion}
+>
+  <Text style={styles.textoCerrarSesion}>
+    Cerrar sesión
+  </Text>
+</TouchableOpacity>
 
 
           <Text style={styles.textoOpcion}>
@@ -119,7 +123,23 @@ const styles = StyleSheet.create({
       width:0,
       height:2,
     },
+
+    
   },
+  botonCerrarSesion: {
+  backgroundColor: '#C0392B',
+  paddingVertical: 14,
+  paddingHorizontal: 18,
+  borderRadius: 10,
+  marginTop: 20,
+  alignItems: 'center',
+},
+
+textoCerrarSesion: {
+  color: '#FFFFFF',
+  fontSize: 16,
+  fontWeight: 'bold',
+},
 
 
   textoOpcion:{

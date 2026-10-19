@@ -55,7 +55,7 @@ export const PantallaHome = () => {
   
     >
     <Text style={styles.nombreUsuario}>
-       {usuario}
+       {usuario ? `Bienvenido, ${usuario.nombre}` : 'Bienvenido'}
       </Text>
       
       

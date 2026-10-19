@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+
 import {
   View,
   Text,
@@ -11,33 +11,53 @@ import {
   ScrollView,
 } from 'react-native';
 
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import React, { useState, useContext } from 'react';
+
+import { AppContext } from '../provider/AppProvider';
 
 
 export const PantallaLogin = ({ navigation }) => {
- 
+ const { setUsuario, setLogueado } = useContext(AppContext);
  
  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
 
-const iniciarSesion = () => {
+const iniciarSesion = async () => {
   if (!email.trim() || !password.trim()) {
     alert('Completá el usuario y la contraseña.');
     return;
   }
 
-  if (email.trim() === 'admin' && password === '1234') {
-  navigation.navigate('Principal', {
-  screen: 'StackHome',
-  params: {
-    screen: 'Inicio',
-  },
-});
+  try {
+    const respuesta = await axios.post(
+      'http://192.168.100.2:3000/login',
+      {
+        email: email.trim(),
+        password: password,
+      }
+    );
 
-    
-  } else {
-    alert('Usuario o contraseña incorrectos.');
+if (respuesta.status === 200) {
+  await AsyncStorage.setItem(
+    'sesionUsuario',
+    JSON.stringify(respuesta.data.usuario)
+  );
+
+  setUsuario(respuesta.data.usuario);
+  setLogueado(true);
+}
+
+  } catch (error) {
+    if (error.response && error.response.status === 401) {
+      alert('Usuario o contraseña incorrectos.');
+    } else {
+      alert('No se pudo conectar con el servidor.');
+      console.error(error.message);
+    }
   }
 };
 

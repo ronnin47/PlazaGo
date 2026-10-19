@@ -12,6 +12,10 @@ import { PantallaMisPuestos } from './components/pantallaMisPuestos';
 import { PantallaConfiguracion } from './components/pantallaConfiguracion';
 import { PantallaLogin } from './components/pantallaLogin';
 
+
+import { AppContext } from './provider/AppProvider';
+import { useContext } from 'react';
+
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
@@ -151,31 +155,35 @@ const NavegacionPrincipal = () => {
 };
 
 // ---------- APP ----------
+// ---------- APP ----------
 export default function App() {
+  const { logueado, loading } = useContext(AppContext);
 
-const [logueado, setLogueado] = React.useState(false);
+  if (loading) {
+    return null;
+  }
 
-
-
-
-  return (
-    <AppProvider>
-      <NavigationContainer>
-        <Stack.Navigator
-          screenOptions={{ headerShown: false }}
-          initialRouteName={logueado ? 'Principal' : 'Login'}
-        >
-          <Stack.Screen
-            name="Login"
-            component={PantallaLogin}
-          />
-
+return (
+    <NavigationContainer>
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {logueado ? (
           <Stack.Screen
             name="Principal"
             component={NavegacionPrincipal}
           />
-        </Stack.Navigator>
-      </NavigationContainer>
-    </AppProvider>
+        ) : (
+          <Stack.Screen
+            name="Login"
+            component={PantallaLogin}
+          />
+        )}
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
+
+
+
+
+
+
