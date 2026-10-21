@@ -36,6 +36,8 @@ export const PantallaHome = () => {
   const { usuario } = useContext(AppContext);
  const [proximaFeria, setProximaFeria] = useState(null);
 
+  const [clima,setClima]=useState(null);
+
   const navigation = useNavigation();
 
 // vamos a asumir que cuando entra a una receta en ese momento se guarda en el historial de busquedas, y si ya estaba no se repite, y solo se mantiene un maximo de 5 ultimas busquedas
@@ -43,7 +45,54 @@ export const PantallaHome = () => {
 
 useEffect(() => {
   obtenerProximaFeria();
+  obtenerClima();
 }, []);
+
+
+
+const obtenerClima = async (fechaFeria) => {
+  if (!fechaFeria) return;
+
+  try {
+    const fecha = new Date(fechaFeria);
+    const fechaConsulta = [
+      fecha.getFullYear(),
+      String(fecha.getMonth() + 1).padStart(2, '0'),
+      String(fecha.getDate()).padStart(2, '0'),
+    ].join('-');
+
+    const respuesta = await axios.get(
+      'https://api.open-meteo.com/v1/forecast',
+      {
+        params: {
+          latitude: -34.57741887080065,
+          longitude: -58.539048090951056,
+          daily:
+            'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max',
+          timezone: 'America/Argentina/Buenos_Aires',
+          start_date: fechaConsulta,
+          end_date: fechaConsulta,
+        },
+      }
+    );
+
+    const datos = respuesta.data.daily;
+
+    setClima({
+      weather_code: datos.weather_code[0],
+      temperatura_maxima: datos.temperature_2m_max[0],
+      temperatura_minima: datos.temperature_2m_min[0],
+      probabilidad_lluvia: datos.precipitation_probability_max[0],
+    });
+  } catch (error) {
+    console.error(
+      'Error al obtener el pronóstico de la feria:',
+      error.message
+    );
+    setClima(null);
+  }
+};
+
 
 const obtenerProximaFeria = async () => {
     const url = `${API_URL}/proximaFeria`;
@@ -57,15 +106,27 @@ const obtenerProximaFeria = async () => {
 
         console.log('Respuesta de próxima feria:', respuesta.data);
 
-        setProximaFeria(respuesta.data.feria ?? null);
+        const feria = respuesta.data.feria ?? null;
+
+        setProximaFeria(feria);
 
         console.log(
-  'Datos de la feria:',
-  JSON.stringify(respuesta.data.feria, null, 2)
-);
+            'Datos de la feria:',
+            JSON.stringify(feria, null, 2)
+        );
+
+        if (feria?.fecha_inicio) {
+            await obtenerClima(feria.fecha_inicio);
+        } else {
+            setClima(null);
+            console.log('La feria no tiene fecha de inicio.');
+        }
 
     } catch (error) {
-        console.error('Error al obtener la próxima feria:', error.message);
+        console.error(
+            'Error al obtener la próxima feria:',
+            error.message
+        );
         console.error('URL solicitada:', url);
         console.error('Respuesta del servidor:', error.response?.data);
         console.error('Código HTTP:', error.response?.status);
@@ -73,9 +134,11 @@ const obtenerProximaFeria = async () => {
 
         if (error.response?.status === 404) {
             setProximaFeria(null);
+            setClima(null);
         }
     }
 };
+
 
 const productosDestacados = [
   {
@@ -260,7 +323,32 @@ const diasRestantes = fechaFeriaArgentina
   : null;
 
 
+const obtenerDescripcionClima = (codigo) => {
+  if (codigo === 0) return 'Despejado';
+  if (codigo === 1) return 'Mayormente despejado';
+  if (codigo === 2) return 'Parcialmente nublado';
+  if (codigo === 3) return 'Nublado';
 
+  if (codigo === 45 || codigo === 48) return 'Niebla';
+
+  if ([51, 53, 55, 56, 57].includes(codigo)) {
+    return 'Llovizna';
+  }
+
+  if ([61, 63, 65, 66, 67, 80, 81, 82].includes(codigo)) {
+    return 'Lluvia';
+  }
+
+  if ([71, 73, 75, 77, 85, 86].includes(codigo)) {
+    return 'Nieve';
+  }
+
+  if ([95, 96, 99].includes(codigo)) {
+    return 'Tormenta';
+  }
+
+  return 'Clima variable';
+};
 return (
   <ImageBackground
     source={{ uri: fondoPantallaHome2 }}
@@ -272,6 +360,8 @@ return (
       contentContainerStyle={styles.contenidoHome}
       showsVerticalScrollIndicator={false}
     >
+
+
 {/* PRÓXIMA FERIA */}
 <View style={styles.seccionProximaFeria}>
   <View style={styles.encabezadoSeccion}>
@@ -317,7 +407,7 @@ return (
         <View style={styles.overlayImagenFeria} />
 
         <View style={styles.contenidoSobreImagen}>
-          {/* TARJETA DE FECHAS Y HORARIOS */}
+          {/* FECHAS Y HORARIOS */}
           <View style={styles.filaInformacionFeria}>
             <View style={styles.tarjetaFecha}>
               <Text style={styles.diaSemana}>
@@ -404,6 +494,67 @@ return (
         </View>
       </View>
 
+      {/* PRONÓSTICO PARA LA FERIA */}
+<View style={styles.datosClimaFeria}>
+  {clima ? (
+    <>
+      <View style={styles.iconoClimaContenedor}>
+        <Text style={styles.iconoClimaFeria}>
+          {clima.weather_code === 0
+            ? '☀️'
+            : clima.weather_code <= 2
+            ? '🌤️'
+            : clima.weather_code === 3
+            ? '☁️'
+            : clima.weather_code === 45 ||
+              clima.weather_code === 48
+            ? '🌫️'
+            : clima.weather_code >= 95
+            ? '⛈️'
+            : '🌧️'}
+        </Text>
+      </View>
+
+      <View style={styles.informacionClimaFeria}>
+        <Text style={styles.tituloClimaFeria}>
+          PRONÓSTICO PARA LA FERIA
+        </Text>
+
+        <Text style={styles.descripcionClimaFeria}>
+          {obtenerDescripcionClima(clima.weather_code)}
+        </Text>
+
+        <Text style={styles.temperaturaClimaFeria}>
+          Probabilidad de lluvia:{' '}
+          {clima.probabilidad_lluvia != null
+            ? `${clima.probabilidad_lluvia}%`
+            : 'Sin datos'}
+        </Text>
+      </View>
+
+      <View style={styles.datoSensacionFeria}>
+        <Text style={styles.valorTemperaturaFeria}>
+          {clima.temperatura_minima != null
+            ? `${Math.round(clima.temperatura_minima)}°`
+            : '--'}
+          <Text style={styles.separadorTemperaturas}> / </Text>
+          {clima.temperatura_maxima != null
+            ? `${Math.round(clima.temperatura_maxima)}°`
+            : '--'}
+        </Text>
+
+        <Text style={styles.etiquetaSensacionFeria}>
+          MÍN. / MÁX.
+        </Text>
+      </View>
+    </>
+  ) : (
+    <Text style={styles.descripcionClimaFeria}>
+      Pronóstico todavía no disponible.
+    </Text>
+  )}
+</View>
+
       {/* DESCRIPCIÓN */}
       <View style={styles.cuerpoFeria}>
         <Text style={styles.descripcionFeria}>
@@ -419,6 +570,8 @@ return (
     </View>
   )}
 </View>
+
+
 
       {/* PRODUCTOS DESTACADOS */}
       <View style={styles.seccionProductos}>
@@ -660,7 +813,7 @@ const styles = StyleSheet.create({
 
   cardImage: {
     width: '100%',
-    height: 140,
+    height: 120,
   },
 
   cardInfo: {
@@ -689,7 +842,7 @@ const styles = StyleSheet.create({
   // CONTENIDO PRINCIPAL
 
   contenidoHome: {
-    paddingTop: 45,
+    paddingTop: 25,
     paddingBottom: 0,
   },
 
@@ -706,7 +859,7 @@ const styles = StyleSheet.create({
   seccionProximaFeria: {
     marginHorizontal: 12,
     paddingHorizontal: 0,
-    marginBottom: 12,
+    marginBottom: 0,
     backgroundColor: '#FFFFFF',
     borderRadius: 22,
     overflow: 'hidden',
@@ -1253,4 +1406,79 @@ const styles = StyleSheet.create({
     height: 132,
     marginLeft: 6,
   },
+  
+datosClimaFeria: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  paddingHorizontal: 18,
+  paddingVertical: 16,
+  backgroundColor: '#F0F6F1',
+  borderTopWidth: 1,
+  borderTopColor: '#DCEBE3',
+  gap: 12,
+},
+
+iconoClimaContenedor: {
+  width: 54,
+  height: 54,
+  borderRadius: 16,
+  backgroundColor: '#FFFFFF',
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+
+iconoClimaFeria: {
+  fontSize: 30,
+},
+
+informacionClimaFeria: {
+  flex: 1,
+  minWidth: 0,
+},
+
+tituloClimaFeria: {
+  color: '#557266',
+  fontSize: 9,
+  fontWeight: '900',
+  letterSpacing: 0.7,
+},
+
+descripcionClimaFeria: {
+  color: '#204B3B',
+  fontSize: 14,
+  fontWeight: '800',
+  marginTop: 4,
+},
+
+temperaturaClimaFeria: {
+  color: '#557266',
+  fontSize: 10,
+  fontWeight: '600',
+  marginTop: 5,
+},
+
+datoSensacionFeria: {
+  alignItems: 'flex-end',
+  justifyContent: 'center',
+},
+
+valorTemperaturaFeria: {
+  color: '#204B3B',
+  fontSize: 19,
+  fontWeight: '900',
+},
+
+separadorTemperaturas: {
+  color: '#8BA397',
+  fontSize: 14,
+  fontWeight: '500',
+},
+
+etiquetaSensacionFeria: {
+  color: '#557266',
+  fontSize: 9,
+  fontWeight: '800',
+  marginTop: 5,
+},
+
 });
