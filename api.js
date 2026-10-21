@@ -49,38 +49,131 @@ app.post("/login", async (req, res) => {
     }
 
     try {
+    const resultado = await pool.query(
+        `SELECT id_usuario, nombre, email, rol, estado
+         FROM usuarios
+         WHERE email = $1 AND password = $2`,
+        [email, password]
+    );
+
+    if (resultado.rows.length === 0) {
+        return res.status(401).json({
+            message: "Email o contraseña incorrectos"
+        });
+    }
+
+    const usuario = resultado.rows[0];
+
+    if (!usuario.estado) {
+        return res.status(403).json({
+            message: "Tu cuenta está inactiva"
+        });
+    }
+
+    res.status(200).json({
+        message: "Login exitoso",
+        usuario: usuario
+    });
+
+} catch (error) {
+    console.error("Error en el login:", error);
+
+    res.status(500).json({
+        message: "Error interno del servidor"
+    });
+}
+
+});
+
+app.post("/insertarFeria", async (req, res) => {
+
+    const {
+        nombre,
+        descripcion,
+        fecha_inicio,
+        fecha_fin,
+        ubicacion,
+        imagen_url,
+        id_administrador
+    } = req.body;
+
+    if (!nombre || !fecha_inicio || !fecha_fin || !ubicacion || !id_administrador) {
+        return res.status(400).json({
+            message: "Faltan datos obligatorios para crear la feria"
+        });
+    }
+
+    try {
 
         const resultado = await pool.query(
-            `SELECT id_usuario, nombre, email
-             FROM usuarios
-             WHERE email = $1 AND password = $2`,
-            [email, password]
+            `INSERT INTO ferias (
+                nombre,
+                descripcion,
+                fecha_inicio,
+                fecha_fin,
+                ubicacion,
+                imagen_url,
+                id_administrador
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
+            RETURNING *`,
+            [
+                nombre,
+                descripcion || null,
+                fecha_inicio,
+                fecha_fin,
+                ubicacion,
+                imagen_url || null,
+                id_administrador
+            ]
         );
 
-        if (resultado.rows.length === 0) {
-            return res.status(401).json({
-                message: "Email o contraseña incorrectos"
-            });
-        }
-
-        const usuario = resultado.rows[0];
-
-        res.status(200).json({
-            message: "Login exitoso",
-            usuario: usuario
+        res.status(201).json({
+            message: "Feria creada correctamente",
+            feria: resultado.rows[0]
         });
 
     } catch (error) {
 
-        console.error("Error en el login:", error.message);
+        console.error("Error al crear la feria:", error);
 
         res.status(500).json({
-            message: "Error interno del servidor"
+            message: "Error al crear la feria"
         });
 
     }
 
 });
+app.get("/proximaFeria", async (req, res) => {
+    console.log("pego en la endpoint proxima feria")
+    try {
+        const resultado = await pool.query(
+            `SELECT *
+             FROM ferias
+             WHERE fecha_fin >= CURRENT_DATE
+             ORDER BY fecha_inicio ASC
+             LIMIT 1`
+        );
+
+        if (resultado.rows.length === 0) {
+            return res.status(404).json({
+                message: "No hay ferias próximas disponibles"
+            });
+        }
+
+        res.status(200).json({
+            feria: resultado.rows[0]
+        });
+
+    } catch (error) {
+        console.error("Error al obtener la próxima feria:", error);
+
+        res.status(500).json({
+            message: "Error al obtener la próxima feria"
+        });
+    }
+});
+
 
 
 

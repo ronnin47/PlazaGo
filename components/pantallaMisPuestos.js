@@ -18,7 +18,7 @@ export const PantallaMisPuestos = () => {
 
 
   const fondoPantallaConfiguracion =
-    "https://res.cloudinary.com/dzul1hatw/image/upload/v1783266417/94d1773e907d13b8eefabbc9f6d3886b_sttwfp.jpg";
+    "https://res.cloudinary.com/dzul1hatw/image/upload/v1792521295/Fondo_org%C3%A1nico_verde_y_dorado_komwcn.png";
 
 
  

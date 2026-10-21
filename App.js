@@ -12,6 +12,8 @@ import { PantallaMisPuestos } from './components/pantallaMisPuestos';
 import { PantallaConfiguracion } from './components/pantallaConfiguracion';
 import { PantallaLogin } from './components/pantallaLogin';
 
+import { PantallaAdministrador } from './components/pantallaAdministrador';
+
 
 import { AppContext } from './provider/AppProvider';
 import { useContext } from 'react';
@@ -85,11 +87,33 @@ const StackConfiguracion = () => {
   );
 };
 
+const StackAdministrador = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: 'black',
+          borderBottomWidth: 1,
+          borderBottomColor: '#4ae6d9',
+        },
+        headerTintColor: 'white',
+      }}
+    >
+      <Stack.Screen
+        name="Administrador"
+        component={PantallaAdministrador}
+        options={{ title: 'Administrador' }}
+      />
+    </Stack.Navigator>
+  );
+};
 
 
 
 // ---------- NAVEGACION PRINCIPAL ----------
 const NavegacionPrincipal = () => {
+  const { usuario } = useContext(AppContext);
+
   return (
     <Tab.Navigator
       screenOptions={{
@@ -99,7 +123,7 @@ const NavegacionPrincipal = () => {
           borderTopColor: '#E0D6C3',
           borderTopWidth: 1,
         },
-        tabBarActiveTintColor: '#E67E22',
+        tabBarActiveTintColor: '#eeba10',
         tabBarInactiveTintColor: '#fcfbfb',
       }}
     >
@@ -127,13 +151,32 @@ const NavegacionPrincipal = () => {
           tabBarLabel: 'Mis Puestos',
           tabBarIcon: ({ color, size, focused }) => (
             <Ionicons
-              name={focused ? 'pizza' : 'pizza-outline'}
+              name={focused ? 'storefront' : 'storefront-outline'}
               size={size}
               color={color}
             />
           ),
         }}
       />
+
+
+      {usuario.rol == 'administrador' && (
+        <Tab.Screen
+          name="StackAdministrador"
+          component={StackAdministrador}
+          options={{
+            title: 'Administrador',
+            tabBarLabel: 'Administrador',
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                name={focused ? 'shield' : 'shield-outline'}
+                size={size}
+                color={color}
+              />
+            ),
+          }}
+        />
+      )}
 
       <Tab.Screen
         name="StackConfiguracion"
@@ -157,7 +200,7 @@ const NavegacionPrincipal = () => {
 // ---------- APP ----------
 // ---------- APP ----------
 export default function App() {
-  const { logueado, loading } = useContext(AppContext);
+  const { logueado, loading} = useContext(AppContext);
 
   if (loading) {
     return null;
@@ -170,6 +213,7 @@ return (
           <Stack.Screen
             name="Principal"
             component={NavegacionPrincipal}
+          
           />
         ) : (
           <Stack.Screen

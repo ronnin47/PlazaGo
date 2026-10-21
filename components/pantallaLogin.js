@@ -1,32 +1,27 @@
 
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-} from 'react-native';
-
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, StatusBar, ScrollView, } from 'react-native';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { useState, useContext } from 'react';
-
+import { useState, useContext } from 'react';
 import { AppContext } from '../provider/AppProvider';
+
+import API_URL from '../config/apiConfig';
+
+
+
+
+
 
 
 export const PantallaLogin = ({ navigation }) => {
- const { setUsuario, setLogueado } = useContext(AppContext);
- 
- 
+  const { setUsuario, setLogueado } = useContext(AppContext);
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [mostrarPassword, setMostrarPassword] = useState(false);
 
 const iniciarSesion = async () => {
+  
   if (!email.trim() || !password.trim()) {
     alert('Completá el usuario y la contraseña.');
     return;
@@ -34,7 +29,7 @@ const iniciarSesion = async () => {
 
   try {
     const respuesta = await axios.post(
-      'http://192.168.100.2:3000/login',
+      `${API_URL}/login`,
       {
         email: email.trim(),
         password: password,
@@ -64,10 +59,7 @@ if (respuesta.status === 200) {
 
   return (
     <>
-
-
     <StatusBar barStyle="light-content" backgroundColor="#101512" />
-
       <ScrollView
         contentContainerStyle={styles.contenido}
         keyboardShouldPersistTaps="handled"
@@ -161,7 +153,6 @@ if (respuesta.status === 200) {
           FERIAS LOCALES · COMUNIDAD · COMERCIO
         </Text>
       </ScrollView>
-
     </>
   
       
