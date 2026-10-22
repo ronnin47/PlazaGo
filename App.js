@@ -17,6 +17,8 @@ import { PantallaAdministrador } from './components/pantallaAdministrador';
 
 import { AppContext } from './provider/AppProvider';
 import { useContext } from 'react';
+import { PantallaPuestero } from './components/pantallaPuestero.js';
+import { PantallaCargarNuevaFeria } from './components/pantallaCargarNuevaFeria.js';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -104,6 +106,35 @@ const StackAdministrador = () => {
         component={PantallaAdministrador}
         options={{ title: 'Administrador' }}
       />
+
+       <Stack.Screen
+        name="PantallaCargarNuevaFeria"
+        component={PantallaCargarNuevaFeria}
+        options={{ title: '+ Nueva Feria' }}
+      />
+    </Stack.Navigator>
+  );
+};
+
+
+//---------PUESTERO----------
+const StackPuestero = () => {
+  return (
+    <Stack.Navigator
+      screenOptions={{
+        headerStyle: {
+          backgroundColor: 'black',
+          borderBottomWidth: 1,
+          borderBottomColor: '#4ae6d9',
+        },
+        headerTintColor: 'white',
+      }}
+    >
+      <Stack.Screen
+        name="Puesto"
+        component={PantallaPuestero}
+        options={{ title: 'Mi puesto' }}
+      />
     </Stack.Navigator>
   );
 };
@@ -178,6 +209,25 @@ const NavegacionPrincipal = () => {
         />
       )}
 
+      {usuario.rol == 'puestero' && (
+        <Tab.Screen
+          name="StackPuestero"
+          component={StackPuestero}
+          options={{
+            title: 'Puesto',
+            tabBarLabel: 'Puesto',
+            tabBarIcon: ({ color, size, focused }) => (
+              <Ionicons
+                 name={focused ? 'umbrella' : 'umbrella-outline'}
+                size={size}
+                color={color}
+              />
+            ),
+          }}
+        />
+      )}
+
+
       <Tab.Screen
         name="StackConfiguracion"
         component={StackConfiguracion}
@@ -197,7 +247,19 @@ const NavegacionPrincipal = () => {
   );
 };
 
-// ---------- APP ----------
+
+
+
+
+
+
+
+
+
+
+
+
+
 // ---------- APP ----------
 export default function App() {
   const { logueado, loading} = useContext(AppContext);

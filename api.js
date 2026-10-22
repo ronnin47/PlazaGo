@@ -145,7 +145,7 @@ app.post("/insertarFeria", async (req, res) => {
 
 });
 app.get("/proximaFeria", async (req, res) => {
-    console.log("pego en la endpoint proxima feria")
+   
     try {
         const resultado = await pool.query(
             `SELECT *
@@ -174,6 +174,165 @@ app.get("/proximaFeria", async (req, res) => {
     }
 });
 
+
+
+
+
+//Mi puesto
+
+
+app.get("/MiPuesto", async (req, res) => {
+    console.log("pego en la endpoint Mi puesto")
+    
+    const {id_usuario} =req.query;
+
+     console.log("id usuario: ",id_usuario)
+    
+    try {
+        const resultado = await pool.query(
+            `SELECT *
+             FROM Puestos
+              WHERE id_usuario=$1 `,[id_usuario]
+        );
+
+        if (resultado.rows.length === 0) {
+            return res.status(404).json({
+                message: "No hay puesto de ese usuario"
+            });
+        }
+
+        res.status(200).json({
+              puesto: resultado.rows[0]
+        });
+
+    } catch (error) {
+        console.error("Error al obtener Puesto:", error);
+
+        res.status(500).json({
+            message: "Error al obtener  Puesto"
+        });
+    }
+});
+
+app.put("/actualizarPuesto/:id_puesto", async (req, res) => {
+
+    const { id_puesto } = req.params;
+
+    const {
+        id_usuario,
+        nombre,
+        descripcion,
+        categoria,
+        imagen_url,
+        imagen_marca,
+        telefono,
+        instagram,
+        facebook,
+        tiktok,
+        otro_enlace,
+        referentes
+    } = req.body;
+
+    if (!id_usuario || !nombre || !categoria || !descripcion) {
+        return res.status(400).json({
+            message: "Faltan datos obligatorios para actualizar el puesto"
+        });
+    }
+
+    if (!Array.isArray(referentes)) {
+        return res.status(400).json({
+            message: "Los referentes deben enviarse como una lista"
+        });
+    }
+
+    const client = await pool.connect();
+
+    try {
+
+        await client.query("BEGIN");
+
+        const resultado = await client.query(
+            `UPDATE puestos
+             SET nombre = $1,
+                 descripcion = $2,
+                 categoria = $3,
+                 imagen_url = $4,
+                 imagen_marca = $5,
+                 telefono = $6,
+                 instagram = $7,
+                 facebook = $8,
+                 tiktok = $9,
+                 otro_enlace = $10
+             WHERE id_puesto = $11
+               AND id_usuario = $12
+             RETURNING *`,
+            [
+                nombre,
+                descripcion,
+                categoria,
+                imagen_url || null,
+                imagen_marca || null,
+                telefono || null,
+                instagram || null,
+                facebook || null,
+                tiktok || null,
+                otro_enlace || null,
+                id_puesto,
+                id_usuario
+            ]
+        );
+
+        if (resultado.rowCount === 0) {
+            await client.query("ROLLBACK");
+
+            return res.status(404).json({
+                message: "No se encontró el puesto para este usuario"
+            });
+        }
+
+        await client.query(
+            `DELETE FROM referentes_puesto
+             WHERE id_puesto = $1`,
+            [id_puesto]
+        );
+
+        for (const referente of referentes) {
+
+            if (referente && referente.trim()) {
+                await client.query(
+                    `INSERT INTO referentes_puesto (id_puesto, nombre)
+                     VALUES ($1, $2)`,
+                    [id_puesto, referente.trim()]
+                );
+            }
+
+        }
+
+        await client.query("COMMIT");
+
+        res.status(200).json({
+            message: "Puesto actualizado correctamente",
+            puesto: {
+                ...resultado.rows[0],
+                referentes: referentes.filter(r => r && r.trim())
+            }
+        });
+
+    } catch (error) {
+
+        await client.query("ROLLBACK");
+
+        console.error("Error al actualizar el puesto:", error);
+
+        res.status(500).json({
+            message: "Error al actualizar el puesto"
+        });
+
+    } finally {
+        client.release();
+    }
+
+});
 
 
 

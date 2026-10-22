@@ -349,6 +349,8 @@ const obtenerDescripcionClima = (codigo) => {
 
   return 'Clima variable';
 };
+
+
 return (
   <ImageBackground
     source={{ uri: fondoPantallaHome2 }}
@@ -730,6 +732,8 @@ return (
           />
         </View>
       </View>
+
+
     </ScrollView>
   </ImageBackground>
 );
