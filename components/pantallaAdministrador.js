@@ -1,5 +1,6 @@
 
-import React, { useContext, useState, useEffect } from 'react';
+import React, { useContext, useState, useEffect, useCallback } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -15,6 +16,8 @@ import axios from 'axios';
 import { AppContext } from '../provider/AppProvider';
 import { useNavigation } from '@react-navigation/native';
 import API_URL from '../config/apiConfig';
+
+import { Ionicons } from '@expo/vector-icons';
 
 export const PantallaAdministrador = () => {
   const { usuario, cerrarSesion } = useContext(AppContext);
@@ -37,19 +40,26 @@ export const PantallaAdministrador = () => {
       setCargando(true);
 
       const respuesta = await axios.get(
-        `${API_URL}/obtenerFerias/${usuario.id_usuario}`,
+        `${API_URL}/obtenerFerias`,
         { timeout: 15000 }
       );
 
       const datos = respuesta.data;
 
+      //console.log('¿Es un array?', Array.isArray(datos));
+      //console.log('Contenido:', datos);
+
+
+
+
+
+
       if (Array.isArray(datos)) {
         setFerias(datos);
-      } else if (datos && Array.isArray(datos.ferias)) {
-        setFerias(datos.ferias);
-      } else {
+      }else {
         setFerias([]);
       }
+      
     } catch (error) {
       console.error(
         'Error al obtener las ferias:',
@@ -65,10 +75,40 @@ export const PantallaAdministrador = () => {
     }
   };
 
+
+
+/*
   useEffect(() => {
     obtenerFerias();
-  }, [usuario?.id_usuario]);
+  }, []);
+*/
+useFocusEffect(
+  useCallback(() => {
+    obtenerFerias();
+  }, [])
+);
+  
 
+/*
+  useEffect(() => {
+    
+    const mostrarFerias=()=>{
+   
+      ferias.map((feria)=>{
+        console.log(`
+          ${feria.nombre}
+          ${feria.descripcion}
+          ${feria.imagen_url}
+          `)
+      })
+
+    }
+
+      mostrarFerias();
+
+
+  }, [ferias]);
+*/
   const formatearFechaFeria = (fecha) => {
     if (!fecha) return 'Fecha no disponible';
 
@@ -92,6 +132,12 @@ export const PantallaAdministrador = () => {
   const abrirCargaFeria = () => {
     navigation.navigate('PantallaCargarNuevaFeria');
   };
+
+
+
+
+
+
 
   return (
     <ImageBackground
@@ -186,47 +232,60 @@ export const PantallaAdministrador = () => {
               </Text>
             </View>
           ) : (
-            ferias.map((feria, indice) => (
-              <View
-                key={feria.id_feria || indice}
-                style={styles.tarjetaFeria}
-              >
-                {feria.imagen_url ? (
-                  <Image
-                    source={{ uri: feria.imagen_url }}
-                    style={styles.imagenFeria}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <View style={styles.imagenFeriaVacia}>
-                    <Text style={styles.iconoImagenFeria}>▤</Text>
+           ferias.map((feria, index) => (
+                <TouchableOpacity
+                  key={feria.id_feria || index}
+                  style={styles.tarjetaFeria}
+                  activeOpacity={0.85}
+                  onPress={() =>
+                    navigation.navigate('PantallaRegistrarPuestos', {
+                      feria: feria,
+                    })
+                  }
+                >
+                  {feria.imagen_url ? (
+                    <Image
+                      source={{ uri: feria.imagen_url }}
+                      style={styles.imagenFeria}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <View style={styles.imagenFeriaVacia}>
+                      <Text style={styles.iconoImagenFeria}>▤</Text>
+                    </View>
+                  )}
+
+                  <View style={styles.contenidoFeria}>
+                    <Text style={styles.nombreFeria}>
+                      {feria.nombre || 'Feria sin nombre'}
+                    </Text>
+
+                    <Text style={styles.descripcionFeria}>
+                      {feria.descripcion ||
+                        'Sin descripción disponible.'}
+                    </Text>
+
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Ionicons
+                        name="location-sharp"
+                        size={16}
+                        color="#804d44"
+                      />
+                      <Text style={styles.datoFeria}>
+                        {feria.ubicacion || 'Ubicación no disponible'}
+                      </Text>
+                    </View>
+
+                    <Text style={styles.datoFeria}>
+                      Inicio: {formatearFechaFeria(feria.fecha_inicio)}
+                    </Text>
+
+                    <Text style={styles.datoFeria}>
+                      Fin: {formatearFechaFeria(feria.fecha_fin)}
+                    </Text>
                   </View>
-                )}
-
-                <View style={styles.contenidoFeria}>
-                  <Text style={styles.nombreFeria}>
-                    {feria.nombre || 'Feria sin nombre'}
-                  </Text>
-
-                  <Text style={styles.descripcionFeria}>
-                    {feria.descripcion ||
-                      'Sin descripción disponible.'}
-                  </Text>
-
-                  <Text style={styles.datoFeria}>
-                    {'📍 ' + (feria.ubicacion || 'Ubicación no disponible')}
-                  </Text>
-
-                  <Text style={styles.datoFeria}>
-                    Inicio: {formatearFechaFeria(feria.fecha_inicio)}
-                  </Text>
-
-                  <Text style={styles.datoFeria}>
-                    Fin: {formatearFechaFeria(feria.fecha_fin)}
-                  </Text>
-                </View>
-              </View>
-            ))
+                </TouchableOpacity>
+              ))
           )}
 
           {/* CARGAR NUEVA FERIA */}

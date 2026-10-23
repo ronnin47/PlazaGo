@@ -158,8 +158,11 @@ const renderizarSelector = () => {
         value={obtenerFechaSeleccionada()}
         mode="date"
         display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-        onValueChange={(nuevaFecha) => {
-          if (!nuevaFecha) return;
+        minimumDate={
+          selectorFecha === 'fin' ? fechaInicio : undefined
+        }
+        onValueChange={(evento, nuevaFecha) => {
+          if (!(nuevaFecha instanceof Date)) return;
 
           if (selectorFecha === 'inicio') {
             setFechaInicio(nuevaFecha);
@@ -174,9 +177,6 @@ const renderizarSelector = () => {
           setSelectorFecha(null);
         }}
         onDismiss={() => setSelectorFecha(null)}
-        minimumDate={
-          selectorFecha === 'fin' ? fechaInicio : undefined
-        }
       />
     );
   }
@@ -195,8 +195,8 @@ const renderizarSelector = () => {
         mode="time"
         display={Platform.OS === 'ios' ? 'spinner' : 'default'}
         is24Hour={true}
-        onValueChange={(nuevaFecha) => {
-          if (!nuevaFecha) return;
+        onValueChange={(evento, nuevaFecha) => {
+          if (!(nuevaFecha instanceof Date)) return;
 
           const hora = formatearHora(nuevaFecha);
 
@@ -215,6 +215,9 @@ const renderizarSelector = () => {
 
   return null;
 };
+
+
+
   const crearFeria = async () => {
     if (!nombre.trim() || !ubicacion.trim()) {
       Alert.alert(
@@ -289,7 +292,7 @@ const renderizarSelector = () => {
       Alert.alert(
         'Feria creada',
         respuesta.data?.message ||
-          'La feria se guardó correctamente como borrador.',
+          'La feria se guardó correctamente como publicada.',
         [
           {
             text: 'Aceptar',
@@ -483,11 +486,11 @@ const renderizarSelector = () => {
 
               {/* AVISO */}
               <View style={styles.avisoBorrador}>
-                <Text style={styles.avisoIcono}>●</Text>
-                <Text style={styles.avisoTexto}>
-                  La feria se guardará como borrador.
-                </Text>
-              </View>
+  <Text style={styles.avisoIcono}>●</Text>
+  <Text style={styles.avisoTexto}>
+    La feria estará disponible para solicitar inscripciones.
+  </Text>
+</View>
 
               {/* GUARDAR */}
               <TouchableOpacity

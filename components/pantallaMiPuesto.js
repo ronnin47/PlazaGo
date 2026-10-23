@@ -15,6 +15,7 @@ import {
 import { AppContext } from '../provider/AppProvider';
 import API_URL from '../config/apiConfig';
 import axios from 'axios';
+import { GaleriaFeriasProximas } from './galeriaFeriasProximas';
 
 const fondoPantallaConfiguracion =
   'https://res.cloudinary.com/dzul1hatw/image/upload/v1792521295/Fondo_org%C3%A1nico_verde_y_dorado_komwcn.png';
@@ -370,6 +371,10 @@ export const PantallaMiPuesto = ({ puesto }) => {
           )}
 
           <Text style={styles.pie}>MI PUESTO · FERIAS</Text>
+        
+        
+          <GaleriaFeriasProximas></GaleriaFeriasProximas>
+        
         </ScrollView>
       </View>
     </ImageBackground>
@@ -385,7 +390,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(244, 247, 238, 0.82)',
   },
   container: {
-    paddingHorizontal: 20,
+    paddingHorizontal: 0,
     paddingTop: 28,
     paddingBottom: 40,
     maxWidth: 720,

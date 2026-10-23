@@ -19,6 +19,7 @@ import { AppContext } from './provider/AppProvider';
 import { useContext } from 'react';
 import { PantallaPuestero } from './components/pantallaPuestero.js';
 import { PantallaCargarNuevaFeria } from './components/pantallaCargarNuevaFeria.js';
+import { PantallaRegistrarPuestos } from './components/pantallaRegistrarPuestos.js';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -89,6 +90,8 @@ const StackConfiguracion = () => {
   );
 };
 
+
+// ---------- STACK ADMINISTRADOR----------
 const StackAdministrador = () => {
   return (
     <Stack.Navigator
@@ -111,6 +114,12 @@ const StackAdministrador = () => {
         name="PantallaCargarNuevaFeria"
         component={PantallaCargarNuevaFeria}
         options={{ title: '+ Nueva Feria' }}
+      />
+
+       <Stack.Screen
+        name="PantallaRegistrarPuestos"
+        component={PantallaRegistrarPuestos}
+        options={{ title: 'Registro de puestos' }}
       />
     </Stack.Navigator>
   );

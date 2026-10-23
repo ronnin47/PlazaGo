@@ -35,7 +35,7 @@ const fondoPantallaHome2="https://res.cloudinary.com/dzul1hatw/image/upload/v179
 export const PantallaHome = () => {
   const { usuario } = useContext(AppContext);
  const [proximaFeria, setProximaFeria] = useState(null);
-
+const [puestos,setPuestos]=useState([]);
   const [clima,setClima]=useState(null);
 
   const navigation = useNavigation();
@@ -98,23 +98,23 @@ const obtenerProximaFeria = async () => {
     const url = `${API_URL}/proximaFeria`;
 
     try {
-        console.log('Consultando próxima feria:', url);
+        //console.log('Consultando próxima feria:', url);
 
         const respuesta = await axios.get(url, {
             timeout: 10000,
         });
 
-        console.log('Respuesta de próxima feria:', respuesta.data);
+        //console.log('Respuesta de próxima feria:', respuesta.data);
 
         const feria = respuesta.data.feria ?? null;
 
         setProximaFeria(feria);
 
-        console.log(
+       /* console.log(
             'Datos de la feria:',
             JSON.stringify(feria, null, 2)
         );
-
+*/
         if (feria?.fecha_inicio) {
             await obtenerClima(feria.fecha_inicio);
         } else {
@@ -138,6 +138,39 @@ const obtenerProximaFeria = async () => {
         }
     }
 };
+
+const obtenerPuestosFeria = async () => {
+  if (!proximaFeria?.id_feria) {
+    setPuestos([]);
+    return;
+  }
+
+  try {
+    const respuesta = await axios.get(
+      `${API_URL}/obtenerPuestosAprobadosFeria`,
+      {
+        params: {
+          id_feria: proximaFeria.id_feria,
+        },
+      }
+    );
+
+    setPuestos(
+      Array.isArray(respuesta.data) ? respuesta.data : []
+    );
+  } catch (error) {
+    console.error(
+      'Error al obtener los puestos de la feria:',
+      error.response?.data || error.message
+    );
+
+    setPuestos([]);
+  }
+};
+
+useEffect(() => {
+  obtenerPuestosFeria();
+}, [proximaFeria?.id_feria]);
 
 
 const productosDestacados = [
@@ -224,26 +257,7 @@ const productosDestacados = [
 ];
 
 
-const puestos = [
-  {
-    id: 1,
-    imagen: 'https://www.clarin.com/img/2016/12/03/SyeGr1kcVx_720x0.jpg',
-    nombrePuesto: 'El Rincón Apícola',
-    nombrePuestero: 'Martín González',
-  },
-  {
-    id: 2,
-    imagen: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTKTGsrzMvpFD4P1bht23As-PjOOzAtPT8xAgXOHeA6XQ&s',
-    nombrePuesto: 'Cerámica del Sur',
-    nombrePuestero: 'Lucía Fernández',
-  },
-  {
-    id: 3,
-    imagen: 'https://ciudaddecorrientes.gov.ar/sites/default/files/styles/1140_de_ancho/public/img_20250804_170630_343.jpg?itok=fnhEZRFh',
-    nombrePuesto: 'La Espiga',
-    nombrePuestero: 'Diego Ramírez',
-  },
-];
+
 
 
 
@@ -634,71 +648,87 @@ return (
         </ScrollView>
       </View>
 
-      {/* PUESTOS DE LA PRÓXIMA FERIA */}
-      <View style={styles.seccionPuestos}>
-        <View style={styles.encabezadoSeccion}>
-          <View style={styles.indicadorSeccion} />
+{/* PUESTOS DE LA PRÓXIMA FERIA */}
+<View style={styles.seccionPuestos}>
+  <View style={styles.encabezadoSeccion}>
+    <View style={styles.indicadorSeccion} />
 
-          <View>
-            <Text style={styles.etiquetaSeccion}>
-              CONOCÉ A LOS PUESTEROS
-            </Text>
+    <View>
+      <Text style={styles.etiquetaSeccion}>
+        CONOCÉ A LOS PUESTEROS
+      </Text>
 
-            <Text style={styles.subtituloPuestos}>
-              Personas detrás de cada puesto
+      <Text style={styles.subtituloPuestos}>
+        Personas detrás de cada puesto
+      </Text>
+    </View>
+  </View>
+
+  <ScrollView
+    horizontal
+    showsHorizontalScrollIndicator={false}
+    contentContainerStyle={styles.listaPuestos}
+  >
+    {puestos.map((puesto) => (
+      <View
+        key={puesto.id_inscripcion}
+        style={styles.tarjetaPuesto}
+      >
+        <View style={styles.contenedorImagenPuesto}>
+          <Image
+            source={{ uri: puesto.imagen_url }}
+            style={styles.imagenPuesto}
+            resizeMode="cover"
+          />
+
+          <View style={styles.etiquetaPuesto}>
+            <Text style={styles.textoEtiquetaPuesto}>
+              FERIA DE PRIMAVERA
             </Text>
           </View>
         </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.listaPuestos}
-        >
-          {puestos.map((puesto) => (
-            <View
-              key={puesto.id}
-              style={styles.tarjetaPuesto}
-            >
-              <View style={styles.contenedorImagenPuesto}>
-                <Image
-                  source={{ uri: puesto.imagen }}
-                  style={styles.imagenPuesto}
-                  resizeMode="cover"
-                />
+        <View style={styles.contenidoPuesto}>
+          <Text style={styles.etiquetaPuestero}>
+            PUESTERO
+          </Text>
 
-                <View style={styles.etiquetaPuesto}>
-                  <Text style={styles.textoEtiquetaPuesto}>
-                    FERIA DE PRIMAVERA
-                  </Text>
-                </View>
-              </View>
+          <Text
+            style={styles.nombrePuestero}
+            numberOfLines={2}
+          >
+            {Array.isArray(puesto.referentes)
+              ? puesto.referentes
+                  .map((referente) =>
+                    typeof referente === 'string'
+                      ? referente
+                      : referente.nombre
+                  )
+                  .filter(Boolean)
+                  .join(' & ') || 'Sin referentes asignados'
+              : puesto.nombre_referente || 'Sin referentes asignados'}
+          </Text>
 
-              <View style={styles.contenidoPuesto}>
-                <Text style={styles.etiquetaPuestero}>
-                  TU ANFITRIÓN
-                </Text>
+          <View style={styles.separadorPuesto} />
 
-                <Text
-                  style={styles.nombrePuestero}
-                  numberOfLines={1}
-                >
-                  {puesto.nombrePuestero}
-                </Text>
+          <Text
+  style={styles.nombrePuesto}
+  numberOfLines={2}
+>
+  {puesto.nombre_puesto}
+</Text>
 
-                <View style={styles.separadorPuesto} />
-
-                <Text
-                  style={styles.nombrePuesto}
-                  numberOfLines={2}
-                >
-                  {puesto.nombrePuesto}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </ScrollView>
+<Text
+  style={styles.etiquetaPuestero}
+  numberOfLines={1}
+>
+  {puesto.categoria || 'Sin categoría'}
+</Text>
+        </View>
       </View>
+    ))}
+  </ScrollView>
+</View>
 
       {/* LEO Y LA FRASE DEL DÍA */}
       <View style={styles.seccionLeo}>
