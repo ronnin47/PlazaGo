@@ -37,7 +37,7 @@ export const PantallaHome = () => {
  const [proximaFeria, setProximaFeria] = useState(null);
 const [puestos,setPuestos]=useState([]);
   const [clima,setClima]=useState(null);
-
+const [productosDestacados, setProductosDestacados] = useState([]);
   const navigation = useNavigation();
 
 // vamos a asumir que cuando entra a una receta en ese momento se guarda en el historial de busquedas, y si ya estaba no se repite, y solo se mantiene un maximo de 5 ultimas busquedas
@@ -46,9 +46,27 @@ const [puestos,setPuestos]=useState([]);
 useEffect(() => {
   obtenerProximaFeria();
   obtenerClima();
+  obtenerProductosDestacados();
 }, []);
 
+const obtenerProductosDestacados = async () => {
+  try {
+    const respuesta = await axios.get(
+      `${API_URL}/consumirProductosProximaFeria`
+    );
 
+    setProductosDestacados(
+      Array.isArray(respuesta.data) ? respuesta.data : []
+    );
+  } catch (error) {
+    console.error(
+      'Error al obtener los productos destacados:',
+      error.response?.data || error.message
+    );
+
+    setProductosDestacados([]);
+  }
+};
 
 const obtenerClima = async (fechaFeria) => {
   if (!fechaFeria) return;
@@ -173,88 +191,6 @@ useEffect(() => {
 }, [proximaFeria?.id_feria]);
 
 
-const productosDestacados = [
-  {
-    id: 1,
-    imagen: "https://sierrasandaluzas.com/wp-content/uploads/2021/11/miel-cruda-eco-1024x683.jpg",
-    nombre: "Miel artesanal",
-    descripcion: "Miel pura de producción local.",
-    categoria: "Alimentos",
-    nombrePuesto: "El Rincón Apícola",
-  },
-  {
-    id: 2,
-    imagen: "https://d22fxaf9t8d39k.cloudfront.net/beeeb959ec1bd78c9bfa239382a27b3a6a371bd5ec2dfc17ece2c578ce5712b1437090.png",
-    nombre: "Cuenco de cerámica",
-    descripcion: "Pieza artesanal hecha a mano.",
-    categoria: "Artesanías",
-    nombrePuesto: "Cerámica del Sur",
-  },
-  {
-    id: 3,
-    imagen: "https://www.conasi.eu/blog/wp-content/uploads/2015/10/Pan-hecho-con-masa-madre-900x629.jpg",
-    nombre: "Pan de masa madre",
-    descripcion: "Pan artesanal de fermentación lenta.",
-    categoria: "Panadería",
-    nombrePuesto: "La Espiga",
-  },
-  {
-    id: 4,
-    imagen: "https://content.elmueble.com/medio/2019/12/11/como-hacer-jabon-natural_c5d7893d_674x818.jpg",
-    nombre: "Jabón natural",
-    descripcion: "Jabón elaborado con ingredientes naturales.",
-    categoria: "Cosmética natural",
-    nombrePuesto: "Esencia Viva",
-  },
-  {
-    id: 5,
-    imagen: "https://acdn-us.mitiendanube.com/stores/005/381/375/products/j-72-134a0102d25bb0fba717368178164582-1024-1024.webp",
-    nombre: "Collar artesanal",
-    descripcion: "Collar hecho a mano con piedras naturales.",
-    categoria: "Accesorios",
-    nombrePuesto: "Piedra y Plata",
-  },
-  {
-    id: 6,
-    imagen: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTleBX8laO5qNr9_gykziSNmVS2PfeLo4Rrw5BKvuZmrA&s=10",
-    nombre: "Mermelada de frutilla",
-    descripcion: "Mermelada casera elaborada en pequeños lotes.",
-    categoria: "Alimentos",
-    nombrePuesto: "Dulces del Campo",
-  },
-  {
-    id: 7,
-    imagen: "https://scontent.faep7-1.fna.fbcdn.net/v/t39.30808-6/360097105_770514561542156_3730272878156361880_n.jpg?stp=dst-jpg_tt6&cstp=mx662x660&ctp=s662x660&_nc_cat=106&_nc_map=urlgen_bucketless&ccb=1-7&_nc_sid=6ee11a&_nc_ohc=aKe5sW140bMQ7kNvwEUrpFl&_nc_oc=AdpczQg6uXCGIjZrGMzJali0Ekovbf6ySUGH-VtsFOcPSmL1MjRA4HgaPQ-wN0wr9L9Bs8yp9jV-DRj_L47aJvxw&_nc_zt=23&_nc_ht=scontent.faep7-1.fna&_nc_gid=eNO2WdRABrPz0JxpBVXN_Q&_nc_ss=7b2a8&oh=00_AQNqQR2O6Ry4HzZrISxRiSARsD4zminwcOQIKwzkH54yTg&oe=6ADDE523",
-    nombre: "Maceta pintada a mano",
-    descripcion: "Maceta decorativa con diseño original.",
-    categoria: "Decoración",
-    nombrePuesto: "Verde Hogar",
-  },
-  {
-    id: 8,
-    imagen: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR_q63OrZmT9jEnBE2MH-P53ixq1VpR8cEYi6xu__6xz2fu2_5eT1I0FeKE&s=10",
-    nombre: "Budín de naranja",
-    descripcion: "Budín casero con naranja fresca.",
-    categoria: "Pastelería",
-    nombrePuesto: "La Cocina de Ana",
-  },
-  {
-    id: 9,
-    imagen: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTEWPDw8egIE6_yDDo08uqF9kibZvhoJadonKyyA3_FNg&s=10",
-    nombre: "Bolsa de tela estampada",
-    descripcion: "Bolsa reutilizable con estampado artesanal.",
-    categoria: "Textiles",
-    nombrePuesto: "Trama Creativa",
-  },
-  {
-    id: 10,
-    imagen: "https://http2.mlstatic.com/D_NQ_NP_632804-MLA114083100625_072026-O.webp",
-    nombre: "Vela aromática",
-    descripcion: "Vela artesanal con fragancia de lavanda.",
-    categoria: "Decoración",
-    nombrePuesto: "Luz de Luna",
-  },
-];
 
 
 
@@ -589,65 +525,64 @@ return (
 
 
 
-      {/* PRODUCTOS DESTACADOS */}
-      <View style={styles.seccionProductos}>
-        <View style={styles.encabezadoSeccion}>
-          <View style={styles.indicadorSeccion} />
+     {/* PRODUCTOS DESTACADOS */}
+<View style={styles.seccionProductos}>
+  <View style={styles.encabezadoSeccion}>
+    <View style={styles.indicadorSeccion} />
 
-          <Text style={styles.etiquetaSeccion}>
-            PRODUCTOS DESTACADOS
+    <Text style={styles.etiquetaSeccion}>
+      PRODUCTOS DESTACADOS
+    </Text>
+  </View>
+
+  <ScrollView
+    horizontal
+    showsHorizontalScrollIndicator={false}
+    contentContainerStyle={styles.listaProductos}
+  >
+    {productosDestacados.map((producto) => (
+      <View
+        key={producto.id_producto}
+        style={styles.tarjetaProducto}
+      >
+        <Image
+          source={{ uri: producto.imagen_url }}
+          style={styles.imagenProducto}
+          resizeMode="cover"
+        />
+
+        <View style={styles.contenidoProducto}>
+          <Text style={styles.categoriaProducto}>
+            {producto.categoria}
+          </Text>
+
+          <Text
+            style={styles.nombreProducto}
+            numberOfLines={1}
+          >
+            {producto.nombre}
+          </Text>
+
+          <Text
+            style={styles.descripcionProducto}
+            numberOfLines={2}
+          >
+            {producto.descripcion}
+          </Text>
+
+          <View style={styles.separadorProducto} />
+
+          <Text
+            style={styles.nombrePuesto}
+            numberOfLines={1}
+          >
+            {producto.nombre_puesto}
           </Text>
         </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.listaProductos}
-        >
-          {productosDestacados.map((producto) => (
-            <View
-              key={producto.id}
-              style={styles.tarjetaProducto}
-            >
-              <Image
-                source={{ uri: producto.imagen }}
-                style={styles.imagenProducto}
-                resizeMode="cover"
-              />
-
-              <View style={styles.contenidoProducto}>
-                <Text style={styles.categoriaProducto}>
-                  {producto.categoria}
-                </Text>
-
-                <Text
-                  style={styles.nombreProducto}
-                  numberOfLines={1}
-                >
-                  {producto.nombre}
-                </Text>
-
-                <Text
-                  style={styles.descripcionProducto}
-                  numberOfLines={2}
-                >
-                  {producto.descripcion}
-                </Text>
-
-                <View style={styles.separadorProducto} />
-
-                <Text
-                  style={styles.nombrePuesto}
-                  numberOfLines={1}
-                >
-                  {producto.nombrePuesto}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </ScrollView>
       </View>
-
+    ))}
+  </ScrollView>
+</View>
 {/* PUESTOS DE LA PRÓXIMA FERIA */}
 <View style={styles.seccionPuestos}>
   <View style={styles.encabezadoSeccion}>

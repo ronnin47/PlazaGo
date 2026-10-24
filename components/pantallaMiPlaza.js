@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { AppContext } from '../provider/AppProvider';
 
-export const PantallaMisPuestos = () => {
+export const PantallaMiPlaza = () => {
 
   const { usuario } = useContext(AppContext);
 

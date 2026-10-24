@@ -87,6 +87,57 @@ app.post("/login", async (req, res) => {
 
 
 
+//home
+app.get("/consumirProductosProximaFeria", async (req, res) => {
+
+    try {
+        const resultado = await pool.query(
+            `SELECT
+                pr.id_producto,
+                pr.id_puesto,
+                pr.nombre,
+                pr.descripcion,
+                pr.precio,
+                pr.imagen_url,
+                pr.estado,
+                pr.destacado,
+                pu.nombre AS nombre_puesto,
+                pu.categoria
+            FROM productos pr
+            INNER JOIN puestos pu
+                ON pu.id_puesto = pr.id_puesto
+            INNER JOIN inscripciones_ferias i
+                ON i.id_puesto = pu.id_puesto
+            INNER JOIN ferias f
+                ON f.id_feria = i.id_feria
+            WHERE pr.destacado = TRUE
+              AND pr.estado = TRUE
+              AND pu.estado = TRUE
+              AND i.estado = 'aprobado'
+              AND f.id_feria = (
+                  SELECT id_feria
+                  FROM ferias
+                  WHERE fecha_fin >= CURRENT_DATE
+                  ORDER BY fecha_inicio ASC
+                  LIMIT 1
+              )
+            ORDER BY pr.id_producto DESC`
+        );
+
+        return res.status(200).json(resultado.rows);
+
+    } catch (error) {
+        console.error(
+            "Error al obtener los productos destacados de la próxima feria:",
+            error
+        );
+
+        return res.status(500).json({
+            mensaje: "Error al obtener los productos destacados de la próxima feria."
+        });
+    }
+});
+
 //-------------------ADMISTRADOR-----------------------------------------
 app.post("/insertarFeria", async (req, res) => {
 
@@ -541,6 +592,131 @@ app.put("/actualizarPuesto/:id_puesto", async (req, res) => {
     }
 
 });
+
+app.get("/obtenerProductosPuesto", async (req, res) => {
+    const { id_puesto } = req.query;
+
+    if (!id_puesto) {
+        return res.status(400).json({
+            mensaje: "Falta el ID del puesto."
+        });
+    }
+
+    try {
+        const resultado = await pool.query(
+            `SELECT
+                id_producto,
+                id_puesto,
+                nombre,
+                descripcion,
+                precio,
+                imagen_url,
+                estado,
+                destacado
+            FROM productos
+            WHERE id_puesto = $1
+              AND estado = true
+            ORDER BY id_producto DESC`,
+            [id_puesto]
+        );
+
+        return res.status(200).json(resultado.rows);
+
+    } catch (error) {
+        console.error(
+            "Error al obtener los productos del puesto:",
+            error
+        );
+
+        return res.status(500).json({
+            mensaje: "Error al obtener los productos del puesto."
+        });
+    }
+});
+
+
+app.post("/insertarProducto", async (req, res) => {
+    const {
+        id_puesto,
+        nombre,
+        descripcion,
+        precio,
+        imagen_url,
+        destacado
+    } = req.body;
+
+    if (!id_puesto || !nombre || precio === undefined || precio === null) {
+        return res.status(400).json({
+            mensaje: "Faltan datos obligatorios del producto."
+        });
+    }
+
+    try {
+        // Verificar el límite de 3 productos destacados
+        if (destacado === true) {
+            const resultadoDestacados = await pool.query(
+                `SELECT COUNT(*) AS cantidad
+                 FROM productos
+                 WHERE id_puesto = $1
+                   AND estado = true
+                   AND destacado = true`,
+                [id_puesto]
+            );
+
+            if (Number(resultadoDestacados.rows[0].cantidad) >= 3) {
+                return res.status(400).json({
+                    mensaje: "El puesto ya tiene 3 productos destacados."
+                });
+            }
+        }
+
+        const resultado = await pool.query(
+            `INSERT INTO productos (
+                id_puesto,
+                nombre,
+                descripcion,
+                precio,
+                imagen_url,
+                destacado
+            )
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING
+                id_producto,
+                id_puesto,
+                nombre,
+                descripcion,
+                precio,
+                imagen_url,
+                estado,
+                destacado`,
+            [
+                id_puesto,
+                nombre.trim(),
+                descripcion || null,
+                precio,
+                imagen_url || null,
+                destacado === true
+            ]
+        );
+
+        return res.status(201).json({
+            mensaje: "Producto agregado correctamente.",
+            producto: resultado.rows[0]
+        });
+
+    } catch (error) {
+        console.error("Error al insertar el producto:", error);
+
+        return res.status(500).json({
+            mensaje: "Error al guardar el producto."
+        });
+    }
+});
+
+
+
+
+
 
 
 

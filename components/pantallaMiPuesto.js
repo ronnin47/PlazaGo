@@ -16,6 +16,7 @@ import { AppContext } from '../provider/AppProvider';
 import API_URL from '../config/apiConfig';
 import axios from 'axios';
 import { GaleriaFeriasProximas } from './galeriaFeriasProximas';
+import { SeccionProductos } from './seccionProductos';
 
 const fondoPantallaConfiguracion =
   'https://res.cloudinary.com/dzul1hatw/image/upload/v1792521295/Fondo_org%C3%A1nico_verde_y_dorado_komwcn.png';
@@ -374,6 +375,7 @@ export const PantallaMiPuesto = ({ puesto }) => {
         
         
           <GaleriaFeriasProximas></GaleriaFeriasProximas>
+          <SeccionProductos puesto={puesto} />
         
         </ScrollView>
       </View>

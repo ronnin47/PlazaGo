@@ -8,7 +8,7 @@ import { AppProvider } from './provider/AppProvider';
 import { Ionicons } from '@expo/vector-icons';
 
 import { PantallaHome } from './components/pantallaHome';
-import { PantallaMisPuestos } from './components/pantallaMisPuestos';
+import { PantallaMiPlaza } from './components/pantallaMiPlaza.js';
 import { PantallaConfiguracion } from './components/pantallaConfiguracion';
 import { PantallaLogin } from './components/pantallaLogin';
 
@@ -46,7 +46,7 @@ const StackHome = () => {
   );
 };
 
-// ---------- STACK MIS PUESTOS ----------
+// ---------- STACK MI Plaza ----------
 const StackMisPuestos = () => {
   return (
     <Stack.Navigator
@@ -60,9 +60,9 @@ const StackMisPuestos = () => {
       }}
     >
       <Stack.Screen
-        name="misPuestos"
-        component={PantallaMisPuestos}
-        options={{ title: 'Mis Recetas' }}
+        name="miPlaza"
+        component={PantallaMiPlaza}
+        options={{ title: 'Mi Plaza' }}
       />
     </Stack.Navigator>
   );
