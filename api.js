@@ -37,6 +37,10 @@ app.get("/",(req, res)=>{
 
 });
 
+
+
+
+
 //-------------------------LOGIN---------------------------------------
 app.post("/login", async (req, res) => {
 
@@ -84,6 +88,13 @@ app.post("/login", async (req, res) => {
 }
 
 });
+
+
+
+
+
+
+
 
 
 
@@ -202,7 +213,7 @@ app.post("/insertarFeria", async (req, res) => {
 app.get("/obtenerFerias", async (req, res) => {
 
 
-    //console.log("Pego en el endpoint obtene ferias")
+   console.log("Pego en el endpoint obtene ferias")
    
     try {
         const resultado = await pool.query(
@@ -252,6 +263,16 @@ app.get("/obtenerSolicitudesFeria", async (req, res) => {
                 p.id_puesto,
                 p.nombre AS nombre_puesto,
                 p.descripcion AS descripcion_puesto,
+                p.categoria,
+
+                COALESCE(
+                    STRING_AGG(
+                        DISTINCT rp.nombre,
+                        ' & '
+                        ORDER BY rp.nombre
+                    ),
+                    'Sin referente'
+                ) AS nombre_referente,
 
                 u.id_usuario,
                 u.nombre AS nombre_puestero,
@@ -266,7 +287,26 @@ app.get("/obtenerSolicitudesFeria", async (req, res) => {
             INNER JOIN usuarios u
                 ON u.id_usuario = p.id_usuario
 
+            LEFT JOIN referentes_puesto rp
+                ON rp.id_puesto = p.id_puesto
+
             WHERE i.id_feria = $1
+
+            GROUP BY
+                i.id_inscripcion,
+                i.id_feria,
+                i.estado,
+                i.fecha_solicitud,
+                i.fecha_respuesta,
+                i.observaciones,
+                p.id_puesto,
+                p.nombre,
+                p.descripcion,
+                p.categoria,
+                u.id_usuario,
+                u.nombre,
+                u.apellido,
+                u.email
 
             ORDER BY
                 CASE
