@@ -37,29 +37,31 @@ consumirMiPuesto();
 
 
 
- const consumirMiPuesto= async ()=>{
+ const consumirMiPuesto = async () => {
+    try {
+        const response = await axios.get(`${API_URL}/MiPuesto`, {
+            params: {
+                id_usuario: usuario.id_usuario,
+            },
+        });
 
-           try {
-  const response = await axios.get(`${API_URL}/MiPuesto`, {
-    params: {
-      id_usuario: usuario.id_usuario,
-    },
-  });
+        setPuesto(response.data.puesto);
 
-  
-    setPuesto(response.data.puesto);
+        console.log(response.data);
 
+    } catch (error) {
 
+        if (error.response && error.response.status === 404) {
+            console.log("El usuario todavía no tiene un puesto.");
+            setPuesto(null);
+        } else {
+            console.log("Error al consumir mi puesto:", error);
+        }
 
-  console.log(response.data);
-  
-  setCargando(false)
-
-} catch (error) {
-  console.log("Error al consumir mi puesto:", error);
-}
- }
-
+    } finally {
+        setCargando(false);
+    }
+};
 
 
 
