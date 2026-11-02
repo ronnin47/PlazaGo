@@ -54,7 +54,7 @@ app.post("/login", async (req, res) => {
 
     try {
     const resultado = await pool.query(
-        `SELECT id_usuario, nombre, email, rol, estado
+        `SELECT id_usuario, nombre, apellido, email, rol, estado
          FROM usuarios
          WHERE email = $1 AND password = $2`,
         [email, password]
@@ -88,13 +88,6 @@ app.post("/login", async (req, res) => {
 }
 
 });
-
-
-
-
-
-
-
 
 
 
@@ -150,8 +143,10 @@ app.get("/consumirProductosProximaFeria", async (req, res) => {
 });
 
 //-------------------ADMISTRADOR-----------------------------------------
+//ADMINISTRADOR - FERIAS
 app.post("/insertarFeria", async (req, res) => {
 
+ 
     const {
         nombre,
         descripcion,
@@ -162,6 +157,8 @@ app.post("/insertarFeria", async (req, res) => {
         id_administrador
     } = req.body;
 
+
+       console.log("pego en insertar nueva feria. Id usuario admin: ",id_administrador)
     if (!nombre || !fecha_inicio || !fecha_fin || !ubicacion || !id_administrador) {
         return res.status(400).json({
             message: "Faltan datos obligatorios para crear la feria"
@@ -210,6 +207,7 @@ app.post("/insertarFeria", async (req, res) => {
 
 });
 
+//se trata de las proximas ferias, las que no han finalizado, para que los puesteros puedan inscribirse
 app.get("/obtenerFerias", async (req, res) => {
 
 
@@ -236,6 +234,29 @@ app.get("/obtenerFerias", async (req, res) => {
 
         res.status(500).json({
             message: "Error al obtener próximas feria"
+        });
+    }
+});
+
+//se trata de todas las ferias, para que el administrador pueda verlas y administrarlas
+app.get("/obtenerTodasLasFerias", async (req, res) => {
+
+    console.log("Pego en el endpoint obtener todas las ferias");
+
+    try {
+        const resultado = await pool.query(
+            `SELECT *
+             FROM ferias
+             ORDER BY fecha_inicio ASC`
+        );
+
+        return res.status(200).json(resultado.rows);
+
+    } catch (error) {
+        console.error("Error al obtener todas las ferias:", error);
+
+        return res.status(500).json({
+            message: "Error al obtener todas las ferias"
         });
     }
 });
@@ -328,7 +349,6 @@ app.get("/obtenerSolicitudesFeria", async (req, res) => {
     }
 });
 
-
 app.put("/actualizarEstadoInscripcion", async (req, res) => {
     const { id_inscripcion, estado } = req.body;
 
@@ -368,10 +388,115 @@ app.put("/actualizarEstadoInscripcion", async (req, res) => {
         });
     }
 });
-//--------------------------------------------------
 
+app.put("/actualizarFeria/:id", async (req, res) => {
 
-//-------------------------PANTALLA DE INCIO---------------------------------
+    const { id } = req.params;
+
+    const {
+        nombre,
+        descripcion,
+        fecha_inicio,
+        fecha_fin,
+        ubicacion,
+        imagen_url,
+        estado
+    } = req.body;
+
+    console.log("Pego en actualizar feria. ID:", id);
+
+    if (
+        !id ||
+        !nombre ||
+        !fecha_inicio ||
+        !fecha_fin ||
+        !ubicacion ||
+        !["publicada", "eliminada"].includes(estado)
+    ) {
+        return res.status(400).json({
+            message: "Faltan datos obligatorios o el estado es inválido."
+        });
+    }
+
+    try {
+
+        const resultado = await pool.query(
+            `UPDATE ferias
+             SET nombre = $1,
+                 descripcion = $2,
+                 fecha_inicio = $3,
+                 fecha_fin = $4,
+                 ubicacion = $5,
+                 imagen_url = $6,
+                 estado = $7
+             WHERE id_feria = $8
+             RETURNING *`,
+            [
+                nombre,
+                descripcion || null,
+                fecha_inicio,
+                fecha_fin,
+                ubicacion,
+                imagen_url || null,
+                estado,
+                id
+            ]
+        );
+
+        if (resultado.rows.length === 0) {
+            return res.status(404).json({
+                message: "No se encontró la feria."
+            });
+        }
+
+        return res.status(200).json({
+            message: "Feria actualizada correctamente",
+            feria: resultado.rows[0]
+        });
+
+    } catch (error) {
+
+        console.error("Error al actualizar la feria:", error);
+
+        return res.status(500).json({
+            message: "Error al actualizar la feria"
+        });
+
+    }
+
+});
+
+app.put("/eliminarFeria/:id", async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const resultado = await pool.query(
+            `UPDATE ferias
+             SET estado = 'eliminada'
+             WHERE id_feria = $1
+             RETURNING id_feria`,
+            [id]
+        );
+
+        if (resultado.rows.length === 0) {
+            return res.status(404).json({
+                message: "No se encontró la feria."
+            });
+        }
+
+        res.status(200).json({
+            message: "Feria dada de baja correctamente."
+        });
+
+    } catch (error) {
+        console.error("Error al dar de baja la feria:", error);
+
+        res.status(500).json({
+            message: "Error al dar de baja la feria."
+        });
+    }
+});
+
 app.get("/proximaFeria", async (req, res) => {
    
     try {
@@ -457,6 +582,142 @@ app.get("/obtenerPuestosAprobadosFeria", async (req, res) => {
 
         return res.status(500).json({
             mensaje: "Error al consultar los puestos de la feria."
+        });
+    }
+});
+
+//ADMINISTRADOR - USUARIOS
+app.get("/obtenerTodosLosUsuarios", async (req, res) => {
+
+    console.log("Pego en el endpoint obtener todos los usuarios");
+
+    try {
+
+        const resultado = await pool.query(
+            `SELECT
+                id_usuario,
+                nombre,
+                apellido,
+                email,
+                rol,
+                estado
+             FROM usuarios
+             ORDER BY id_usuario ASC`
+        );
+
+        return res.status(200).json(resultado.rows);
+
+    } catch (error) {
+
+        console.error("Error al obtener todos los usuarios:", error);
+
+        return res.status(500).json({
+            message: "Error al obtener todos los usuarios"
+        });
+
+    }
+
+});
+
+app.put("/actualizarUsuarioRolEstado", async (req, res) => {
+
+    console.log("Pego en el endpoint actualizarUsuarioRolEstado");
+
+    try {
+
+        const { id_usuario, rol, estado } = req.body;
+
+        const rolesPermitidos = [
+            "administrador",
+            "puestero",
+            "usuario"
+        ];
+
+        // Validar datos
+        if (
+            !Number.isInteger(Number(id_usuario)) ||
+            Number(id_usuario) <= 0 ||
+            !rolesPermitidos.includes(rol) ||
+            typeof estado !== "boolean"
+        ) {
+            return res.status(400).json({
+                message: "Datos de usuario inválidos"
+            });
+        }
+
+        const resultado = await pool.query(
+            `UPDATE usuarios
+             SET
+                rol = $1,
+                estado = $2
+             WHERE id_usuario = $3
+             RETURNING
+                id_usuario,
+                nombre,
+                apellido,
+                email,
+                rol,
+                estado`,
+            [rol, estado, id_usuario]
+        );
+
+        if (resultado.rows.length === 0) {
+            return res.status(404).json({
+                message: "Usuario no encontrado"
+            });
+        }
+
+        return res.status(200).json({
+            message: "Usuario actualizado correctamente",
+            usuario: resultado.rows[0]
+        });
+
+    } catch (error) {
+
+        console.error("Error al actualizar usuario:", error);
+
+        return res.status(500).json({
+            message: "Error al actualizar usuario"
+        });
+
+    }
+
+});
+//--------------------------------------------------
+
+
+
+app.put("/cambiarEstadoPuesto/:id", async (req, res) => {
+
+    const { id } = req.params;
+
+    try {
+
+        const resultado = await pool.query(
+            `UPDATE puestos
+             SET estado = NOT estado
+             WHERE id_puesto = $1
+             RETURNING id_puesto, estado`,
+            [id]
+        );
+
+        if (resultado.rows.length === 0) {
+            return res.status(404).json({
+                message: "No se encontró el puesto."
+            });
+        }
+
+        return res.status(200).json({
+            message: "Estado del puesto actualizado correctamente.",
+            estado: resultado.rows[0].estado
+        });
+
+    } catch (error) {
+
+        console.error("Error al cambiar el estado del puesto:", error);
+
+        return res.status(500).json({
+            message: "Error al cambiar el estado del puesto."
         });
     }
 });
@@ -673,7 +934,6 @@ app.get("/obtenerProductosPuesto", async (req, res) => {
         });
     }
 });
-
 
 app.post("/insertarProducto", async (req, res) => {
     const {
@@ -906,6 +1166,146 @@ app.post("/solicitarInscripcion", async (req, res) => {
 
         return res.status(500).json({
             message: "Error al registrar la solicitud de inscripción"
+        });
+    }
+});
+
+
+
+
+
+app.get("/obtenerResumenAdmin", async (req, res) => {
+
+    console.log("Pego en el endpoint obtenerResumenAdmin");
+
+    try {
+
+        const resultado = await pool.query(`
+            SELECT
+                (SELECT COUNT(*)
+                 FROM ferias
+                 WHERE estado = 'publicada') AS ferias_publicadas,
+
+                (SELECT COUNT(*)
+                 FROM puestos) AS puestos_registrados,
+
+                (SELECT COUNT(*)
+                 FROM usuarios) AS usuarios_registrados,
+
+                (SELECT COUNT(*)
+                 FROM inscripciones_ferias
+                 WHERE estado = 'pendiente') AS solicitudes_pendientes
+        `);
+
+        return res.status(200).json(resultado.rows[0]);
+
+    } catch (error) {
+
+        console.error("Error al obtener resumen del administrador:", error);
+
+        return res.status(500).json({
+            message: "Error al obtener el resumen del administrador"
+        });
+    }
+});
+
+app.get("/obtenerProximasFerias", async (req, res) => {
+
+    console.log("Pego en el endpoint obtenerProximasFerias");
+
+    try {
+
+        const resultado = await pool.query(`
+            SELECT
+                id_feria,
+                nombre,
+                descripcion,
+                fecha_inicio,
+                fecha_fin,
+                ubicacion,
+                imagen_url,
+                estado,
+                id_administrador
+            FROM ferias
+            WHERE estado = 'publicada'
+              AND fecha_inicio > NOW()
+            ORDER BY fecha_inicio ASC
+            LIMIT 5
+        `);
+
+        return res.status(200).json(resultado.rows);
+
+    } catch (error) {
+
+        console.error("Error al obtener próximas ferias:", error);
+
+        return res.status(500).json({
+            message: "Error al obtener próximas ferias"
+        });
+    }
+});
+
+
+
+
+//puestos admin wpf
+app.get("/obtenerTodosLosPuestos", async (req, res) => {
+
+    console.log("Pego en el endpoint obtener todos los puestos");
+
+    try {
+
+        const resultado = await pool.query(
+            `SELECT
+                p.id_puesto,
+                p.nombre,
+                p.descripcion,
+                p.categoria,
+                p.imagen_url,
+                p.id_usuario,
+                p.estado,
+                p.imagen_marca,
+                p.telefono,
+                p.instagram,
+                p.facebook,
+                p.tiktok,
+                p.otro_enlace,
+
+                u.nombre AS nombre_propietario,
+                u.apellido AS apellido_propietario,
+                u.email,
+
+                COUNT(pr.id_producto) AS cantidad_productos,
+
+                CASE
+                    WHEN p.estado = true THEN 'Activo'
+                    ELSE 'Inactivo'
+                END AS estado_texto
+
+             FROM puestos p
+
+             INNER JOIN usuarios u
+                ON p.id_usuario = u.id_usuario
+
+             LEFT JOIN productos pr
+                ON p.id_puesto = pr.id_puesto
+                AND pr.estado = true
+
+             GROUP BY
+                p.id_puesto,
+                u.id_usuario
+
+             ORDER BY p.id_puesto ASC`
+        );
+
+        return res.status(200).json(resultado.rows);
+
+    } catch (error) {
+
+        console.error("Error al obtener todos los puestos:", error);
+
+        return res.status(500).json({
+            message: "Error al obtener los puestos"
         });
     }
 });
