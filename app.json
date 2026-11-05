@@ -4,19 +4,19 @@
     "slug": "PlazaGo",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/iconPlazaGO.png",
+    "icon": "./Assets/iconPlazaGO.png",
     "userInterfaceStyle": "light",
     "ios": {
       "supportsTablet": true
     },
    "android": {
   "adaptiveIcon": {
-    "foregroundImage": "./assets/iconPlazaGO.png",
+    "foregroundImage": "./Assets/iconPlazaGO.png",
     "backgroundColor": "#FFFFFF"
   }
 },
     "web": {
-      "favicon": "./assets/iconPlazaGO.png"
+      "favicon": "./Assets/iconPlazaGO.png"
     },
     "plugins": [
       "@react-native-community/datetimepicker",

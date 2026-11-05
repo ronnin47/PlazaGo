@@ -1313,6 +1313,262 @@ app.get("/obtenerTodosLosPuestos", async (req, res) => {
 
 
 
+//----------------------USUARIO----------------------
+
+// Registro de usuario
+app.post('/registrar', async (req, res) => {
+    const { nombre, apellido, email, password } = req.body;
+
+    if (!nombre || !apellido || !email || !password) {
+        return res.status(400).json({
+            mensaje: 'Todos los campos son obligatorios'
+        });
+    }
+
+    try {
+        // Verificar si el correo ya existe
+        const usuarioExistente = await pool.query(
+            'SELECT id_usuario FROM usuarios WHERE email = $1',
+            [email]
+        );
+
+        if (usuarioExistente.rows.length > 0) {
+            return res.status(409).json({
+                mensaje: 'El correo electrónico ya está registrado'
+            });
+        }
+
+        // Registrar usuario
+        const resultado = await pool.query(
+            `INSERT INTO usuarios
+            (nombre, apellido, email, password, rol, estado)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING id_usuario`,
+            [nombre, apellido, email, password, 'usuario', true]
+        );
+
+        res.status(201).json({
+            mensaje: 'Cuenta creada correctamente',
+            id_usuario: resultado.rows[0].id_usuario
+        });
+
+    } catch (error) {
+        console.error('Error al registrar usuario:', error);
+
+        res.status(500).json({
+            mensaje: 'Error al registrar la cuenta'
+        });
+    }
+});
+
+
+// REGISTRO DE UN USUARIO PARA SER PUESTERO DESDE CREAR CUENTA
+app.post('/solicitarSerPuestero', async (req, res) => {
+
+    const {
+        id_usuario,
+        nombre_emprendimiento,
+        telefono,
+        descripcion
+    } = req.body;
+
+    console.log("Pego en el endpoint solicitar ser puestero");
+    console.log("telefono:", telefono);
+
+    if (!id_usuario || !nombre_emprendimiento || !telefono || !descripcion) {
+        return res.status(400).json({
+            mensaje: 'Todos los campos son obligatorios'
+        });
+    }
+
+    try {
+
+        // Verificar que el usuario exista
+        const usuario = await pool.query(
+            `SELECT id_usuario, rol
+             FROM usuarios
+             WHERE id_usuario = $1`,
+            [id_usuario]
+        );
+
+        if (usuario.rows.length === 0) {
+            return res.status(404).json({
+                mensaje: 'Usuario no encontrado'
+            });
+        }
+
+        if (usuario.rows[0].rol !== 'usuario') {
+            return res.status(400).json({
+                mensaje: 'La cuenta no puede solicitar ser puestero'
+            });
+        }
+
+        // Verificar que no tenga una solicitud pendiente o aprobada
+        const solicitudExistente = await pool.query(
+            `SELECT id_solicitud
+             FROM solicitudes_puestero
+             WHERE id_usuario = $1
+             AND estado_solicitud IN ('pendiente', 'aprobado')`,
+            [id_usuario]
+        );
+
+        if (solicitudExistente.rows.length > 0) {
+            return res.status(409).json({
+                mensaje: 'Ya existe una solicitud pendiente o aprobada'
+            });
+        }
+
+        // Registrar solicitud de puestero
+        const resultado = await pool.query(
+            `INSERT INTO solicitudes_puestero
+             (id_usuario, nombre_emprendimiento, telefono, descripcion)
+             VALUES ($1, $2, $3, $4)
+             RETURNING *`,
+            [
+                id_usuario,
+                nombre_emprendimiento,
+                telefono,
+                descripcion
+            ]
+        );
+
+        return res.status(201).json({
+            mensaje: 'Solicitud enviada correctamente',
+            solicitud: resultado.rows[0]
+        });
+
+    } catch (error) {
+
+        console.error('Error al solicitar ser puestero:', error);
+
+        return res.status(500).json({
+            mensaje: 'Error interno del servidor'
+        });
+    }
+});
+
+
+
+// Obtener solicitudes pendientes de puesteros
+app.get('/obtenerSolicitudesPuestero', async (req, res) => {
+
+    try {
+
+        const resultado = await pool.query(
+            `SELECT
+                sp.id_solicitud,
+                sp.id_usuario,
+                u.nombre,
+                u.apellido,
+                u.email,
+                sp.nombre_emprendimiento,
+                sp.descripcion,
+                sp.telefono,
+                sp.fecha_solicitud,
+                sp.estado_solicitud
+
+             FROM solicitudes_puestero sp
+
+             INNER JOIN usuarios u
+                ON sp.id_usuario = u.id_usuario
+
+             WHERE sp.estado_solicitud = 'pendiente'
+
+             ORDER BY sp.fecha_solicitud DESC`
+        );
+
+        return res.status(200).json(resultado.rows);
+
+    } catch (error) {
+
+        console.error('Error al obtener solicitudes:', error);
+
+        return res.status(500).json({
+            mensaje: 'Error al obtener las solicitudes de puesteros'
+        });
+    }
+});
+
+
+// Actualizar estado de solicitud de puestero
+app.put('/actualizarEstadoSolicitudPuestero', async (req, res) => {
+
+    const { id_solicitud, estado_solicitud } = req.body;
+
+    if (!id_solicitud || !['aprobado', 'rechazado'].includes(estado_solicitud)) {
+        return res.status(400).json({
+            mensaje: 'Datos de solicitud inválidos'
+        });
+    }
+
+    const conexion = await pool.connect();
+
+    try {
+
+        await conexion.query('BEGIN');
+
+        // Buscar y bloquear la solicitud
+        const solicitud = await conexion.query(
+            `SELECT id_solicitud, id_usuario
+             FROM solicitudes_puestero
+             WHERE id_solicitud = $1
+             AND estado_solicitud = 'pendiente'
+             FOR UPDATE`,
+            [id_solicitud]
+        );
+
+        if (solicitud.rows.length === 0) {
+
+            await conexion.query('ROLLBACK');
+
+            return res.status(404).json({
+                mensaje: 'Solicitud no encontrada o ya fue procesada'
+            });
+        }
+
+        const id_usuario = solicitud.rows[0].id_usuario;
+
+        // Actualizar estado de la solicitud
+        await conexion.query(
+            `UPDATE solicitudes_puestero
+             SET estado_solicitud = $1
+             WHERE id_solicitud = $2`,
+            [estado_solicitud, id_solicitud]
+        );
+
+        // Si fue aprobada, cambiar el rol del usuario
+        if (estado_solicitud === 'aprobado') {
+
+            await conexion.query(
+                `UPDATE usuarios
+                 SET rol = 'puestero'
+                 WHERE id_usuario = $1`,
+                [id_usuario]
+            );
+        }
+
+        await conexion.query('COMMIT');
+
+        return res.status(200).json({
+            mensaje: estado_solicitud === 'aprobado'
+                ? 'Usuario aprobado como puestero correctamente'
+                : 'Solicitud rechazada correctamente'
+        });
+
+    } catch (error) {
+
+        await conexion.query('ROLLBACK');
+
+        console.error('Error al actualizar solicitud:', error);
+
+        return res.status(500).json({
+            mensaje: 'Error al actualizar la solicitud'
+        });
+
+    } finally {
+        conexion.release();
+    }
+});
 
 
 

@@ -14,12 +14,19 @@ import { PantallaLogin } from './components/pantallaLogin';
 
 import { PantallaAdministrador } from './components/pantallaAdministrador';
 
+import { PantallaRegistro } from './components/pantallaRegistro';
+
+
+import { PantallaRegistroPuestero } from './components/pantallaResgistroPuestero.js';
+
 
 import { AppContext } from './provider/AppProvider';
 import { useContext } from 'react';
 import { PantallaPuestero } from './components/pantallaPuestero.js';
 import { PantallaCargarNuevaFeria } from './components/pantallaCargarNuevaFeria.js';
 import { PantallaRegistrarPuestos } from './components/pantallaRegistrarPuestos.js';
+
+import { PantallaAdminSolicitudesPuestero } from './components/pantallaAdminSolicitudesPuestero.js';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -120,6 +127,11 @@ const StackAdministrador = () => {
         name="PantallaRegistrarPuestos"
         component={PantallaRegistrarPuestos}
         options={{ title: 'Registro de puestos' }}
+      />
+          <Stack.Screen
+        name="PantallaAdminSolicitudesPuestero"
+        component={PantallaAdminSolicitudesPuestero}
+        options={{ title: 'Solicitudes de puestero' }}
       />
     </Stack.Navigator>
   );
@@ -287,10 +299,24 @@ return (
           
           />
         ) : (
-          <Stack.Screen
+
+            <>
+             <Stack.Screen
             name="Login"
             component={PantallaLogin}
           />
+
+            <Stack.Screen
+        name="Registro"
+        component={PantallaRegistro}
+      />
+
+            <Stack.Screen
+        name="RegistroPuestero"
+        component={PantallaRegistroPuestero}
+      />
+            </>
+         
         )}
       </Stack.Navigator>
     </NavigationContainer>

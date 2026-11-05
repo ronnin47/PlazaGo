@@ -323,6 +323,45 @@ useFocusEffect(
             </TouchableOpacity>
           </View>
 
+
+          {/* SOLICITUDES DE PUESTEROS */}
+<TouchableOpacity
+  style={styles.tarjetaSolicitudes}
+  activeOpacity={0.85}
+  onPress={() => navigation.navigate('PantallaAdminSolicitudesPuestero')}
+>
+  <View style={styles.iconoSolicitudes}>
+    <Ionicons
+      name="people-outline"
+      size={26}
+      color="#E7D39A"
+    />
+  </View>
+
+  <View style={styles.contenidoSolicitudes}>
+    <Text style={styles.tituloSolicitudes}>
+      Solicitudes de puesteros
+    </Text>
+
+    <Text style={styles.descripcionSolicitudes}>
+      Revisá los datos de los usuarios que quieren incorporarse
+      como puesteros a PlazaGo.
+    </Text>
+
+    <View style={styles.etiquetaSolicitudes}>
+      <Text style={styles.textoEtiquetaSolicitudes}>
+        REVISAR SOLICITUDES
+      </Text>
+
+      <Ionicons
+        name="arrow-forward"
+        size={15}
+        color="#FFD54F"
+      />
+    </View>
+  </View>
+</TouchableOpacity>
+
      
         </ScrollView>
       </View>
@@ -658,4 +697,60 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
+   tarjetaSolicitudes: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  backgroundColor: 'rgba(20, 29, 23, 0.94)',
+  borderWidth: 1,
+  borderColor: 'rgba(217, 185, 91, 0.3)',
+  borderRadius: 16,
+  padding: 16,
+  marginTop: 18,
+},
+
+iconoSolicitudes: {
+  width: 50,
+  height: 50,
+  borderRadius: 15,
+  backgroundColor: '#33452D',
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+
+contenidoSolicitudes: {
+  flex: 1,
+  marginLeft: 14,
+},
+
+tituloSolicitudes: {
+  color: '#FFD54F',
+  fontSize: 16,
+  fontWeight: 'bold',
+},
+
+descripcionSolicitudes: {
+  color: '#D0D2C9',
+  fontSize: 12,
+  lineHeight: 18,
+  marginTop: 5,
+},
+
+etiquetaSolicitudes: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  alignSelf: 'flex-start',
+  gap: 7,
+  marginTop: 10,
+  paddingVertical: 6,
+  paddingHorizontal: 9,
+  borderRadius: 8,
+  backgroundColor: 'rgba(217, 185, 91, 0.12)',
+},
+
+textoEtiquetaSolicitudes: {
+  color: '#FFD54F',
+  fontSize: 10,
+  fontWeight: '800',
+  letterSpacing: 0.7,
+},
 });
