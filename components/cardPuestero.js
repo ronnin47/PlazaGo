@@ -8,7 +8,17 @@ import {
   TouchableOpacity,
 } from 'react-native';
 
-export const CardPuestero = ({ puesto, onPress }) => {
+export const CardPuestero = ({ puesto, onPress,esFavorito  }) => {
+
+
+  console.log(
+  'CARD:',
+  puesto.id_puesto,
+  'FAVORITO:',
+  esFavorito,
+  'TIPO:',
+  typeof esFavorito
+);
 
   const referentes = (puesto.referentes || [])
     .slice(0, 3)
@@ -35,22 +45,29 @@ export const CardPuestero = ({ puesto, onPress }) => {
       disabled={!onPress}
     >
 
-      {/* IMAGEN DEL PUESTO */}
+      {/* IMAGEN DEL REFERENTE */}
       <View style={styles.contenedorImagen}>
 
-        {puesto.imagen_url ? (
-          <Image
-            source={{ uri: puesto.imagen_url }}
-            style={styles.imagenPuesto}
-            resizeMode="cover"
-          />
-        ) : (
-          <View style={styles.imagenVacia}>
-            <Text style={styles.textoImagenVacia}>
-              SIN IMAGEN
-            </Text>
-          </View>
-        )}
+       {referentes[0]?.imagen_url ? (
+  <Image
+    source={{ uri: referentes[0].imagen_url }}
+    style={styles.imagenPuesto}
+    resizeMode="cover"
+  />
+) : (
+  <View style={styles.imagenVacia}>
+    <Text style={styles.textoImagenVacia}>
+      SIN IMAGEN
+    </Text>
+  </View>
+)}
+
+{esFavorito === true && (
+  <View style={styles.etiquetaFavorito}>
+    <Text style={styles.corazonFavorito}>♥</Text>
+    <Text style={styles.textoFavorito}>FAVORITO</Text>
+  </View>
+)}
 
         {/* MARCA Y EMPRENDIMIENTO */}
         <View style={styles.overlayImagen}>
@@ -161,7 +178,7 @@ export const CardPuestero = ({ puesto, onPress }) => {
 const styles = StyleSheet.create({
 
   tarjeta: {
-    width: 255,
+    width: 220,
     backgroundColor: '#171C19',
     borderRadius: 17,
     borderWidth: 1,
@@ -172,7 +189,7 @@ const styles = StyleSheet.create({
   // IMAGEN DEL PUESTO
 
   contenedorImagen: {
-    height: 250,
+    height: 210,
     backgroundColor: '#252A25',
     position: 'relative',
   },
@@ -337,5 +354,40 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(217, 185, 91, 0.22)',
     marginHorizontal: 13,
   },
+etiquetaFavorito: {
+  position: 'absolute',
+  top: 12,
+  right: 12,
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 6,
+  paddingHorizontal: 12,
+  height: 34,
+  borderRadius: 18,
+  backgroundColor: '#26382A',
+  borderWidth: 1.5,
+  borderColor: '#b7e639',
+  elevation: 6,
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.25,
+  shadowRadius: 4,
+  zIndex: 999,
+},
 
+corazonFavorito: {
+  color: '#e0d7b6',
+  fontSize: 15,
+  includeFontPadding: false,
+},
+
+textoFavorito: {
+  color: '#FFFFFF',
+  fontSize: 11,
+  fontWeight: '900',
+  letterSpacing: 1,
+  includeFontPadding: false,
+},
+ 
 });

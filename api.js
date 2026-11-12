@@ -774,7 +774,7 @@ app.get("/MiPuesto", async (req, res) => {
         const puesto = resultado.rows[0];
 
         const resultadoReferentes = await pool.query(
-            `SELECT id_referente, id_puesto, nombre
+            `SELECT id_referente, id_puesto, nombre, imagen_url
              FROM referentes_puesto
              WHERE id_puesto = $1
              ORDER BY id_referente`,
@@ -797,14 +797,22 @@ app.get("/MiPuesto", async (req, res) => {
 });
 
 
-app.put("/actualizarPuesto/:id_puesto", async (req, res) => {
 
+
+
+
+
+
+
+
+app.put("/actualizarPuesto/:id_puesto", async (req, res) => {
     const { id_puesto } = req.params;
 
     const {
         id_usuario,
         nombre,
         descripcion,
+        historia,
         categoria,
         imagen_url,
         imagen_marca,
@@ -818,41 +826,43 @@ app.put("/actualizarPuesto/:id_puesto", async (req, res) => {
 
     if (!id_usuario || !nombre || !categoria || !descripcion) {
         return res.status(400).json({
-            message: "Faltan datos obligatorios para actualizar el puesto"
+            mensaje: "Faltan datos obligatorios para actualizar el puesto"
         });
     }
 
     if (!Array.isArray(referentes)) {
         return res.status(400).json({
-            message: "Los referentes deben enviarse como una lista"
+            mensaje: "Los referentes deben enviarse como una lista"
         });
     }
 
     const client = await pool.connect();
 
     try {
-
         await client.query("BEGIN");
 
+        // ACTUALIZAR INFORMACIÓN DEL PUESTO
         const resultado = await client.query(
             `UPDATE puestos
              SET nombre = $1,
                  descripcion = $2,
-                 categoria = $3,
-                 imagen_url = $4,
-                 imagen_marca = $5,
-                 telefono = $6,
-                 instagram = $7,
-                 facebook = $8,
-                 tiktok = $9,
-                 otro_enlace = $10
-             WHERE id_puesto = $11
-               AND id_usuario = $12
+                 historia = $3,
+                 categoria = $4,
+                 imagen_url = $5,
+                 imagen_marca = $6,
+                 telefono = $7,
+                 instagram = $8,
+                 facebook = $9,
+                 tiktok = $10,
+                 otro_enlace = $11
+             WHERE id_puesto = $12
+               AND id_usuario = $13
              RETURNING *`,
             [
-                nombre,
-                descripcion,
-                categoria,
+                nombre.trim(),
+                descripcion.trim(),
+                historia || null,
+                categoria.trim(),
                 imagen_url || null,
                 imagen_marca || null,
                 telefono || null,
@@ -869,53 +879,123 @@ app.put("/actualizarPuesto/:id_puesto", async (req, res) => {
             await client.query("ROLLBACK");
 
             return res.status(404).json({
-                message: "No se encontró el puesto para este usuario"
+                mensaje: "No se encontró el puesto para este usuario"
             });
         }
 
-        await client.query(
-            `DELETE FROM referentes_puesto
+        // OBTENER LOS REFERENTES ACTUALES
+        const referentesActuales = await client.query(
+            `SELECT id_referente
+             FROM referentes_puesto
              WHERE id_puesto = $1`,
             [id_puesto]
         );
 
-        for (const referente of referentes) {
+        const idsActuales = referentesActuales.rows.map(
+            r => r.id_referente
+        );
 
-            if (referente && referente.trim()) {
-                await client.query(
-                    `INSERT INTO referentes_puesto (id_puesto, nombre)
-                     VALUES ($1, $2)`,
-                    [id_puesto, referente.trim()]
-                );
+        // IDENTIFICAR LOS REFERENTES QUE SE CONSERVAN
+        const idsRecibidos = referentes
+            .filter(r => r.id_referente)
+            .map(r => Number(r.id_referente));
+
+        // ELIMINAR SOLAMENTE LOS REFERENTES QUITADOS
+        const idsEliminar = idsActuales.filter(
+            id => !idsRecibidos.includes(id)
+        );
+
+        if (idsEliminar.length > 0) {
+            await client.query(
+                `DELETE FROM referentes_puesto
+                 WHERE id_puesto = $1
+                   AND id_referente = ANY($2::int[])`,
+                [id_puesto, idsEliminar]
+            );
+        }
+
+        // INSERTAR O ACTUALIZAR REFERENTES
+        for (const referente of referentes) {
+            if (!referente.nombre || !referente.nombre.trim()) {
+                continue;
             }
 
+            if (referente.id_referente) {
+                // ACTUALIZAR REFERENTE EXISTENTE
+                await client.query(
+                    `UPDATE referentes_puesto
+                     SET nombre = $1,
+                         imagen_url = $2
+                     WHERE id_referente = $3
+                       AND id_puesto = $4`,
+                    [
+                        referente.nombre.trim(),
+                        referente.imagen_url || null,
+                        referente.id_referente,
+                        id_puesto
+                    ]
+                );
+            } else {
+                // INSERTAR REFERENTE NUEVO
+                await client.query(
+                    `INSERT INTO referentes_puesto
+                     (id_puesto, nombre, imagen_url)
+                     VALUES ($1, $2, $3)`,
+                    [
+                        id_puesto,
+                        referente.nombre.trim(),
+                        referente.imagen_url || null
+                    ]
+                );
+            }
         }
+
+        // DEVOLVER REFERENTES ACTUALIZADOS
+        const resultadoReferentes = await client.query(
+            `SELECT id_referente, id_puesto, nombre, imagen_url
+             FROM referentes_puesto
+             WHERE id_puesto = $1
+             ORDER BY id_referente`,
+            [id_puesto]
+        );
 
         await client.query("COMMIT");
 
-        res.status(200).json({
-            message: "Puesto actualizado correctamente",
+        return res.status(200).json({
+            mensaje: "Puesto actualizado correctamente",
             puesto: {
                 ...resultado.rows[0],
-                referentes: referentes.filter(r => r && r.trim())
+                referentes: resultadoReferentes.rows
             }
         });
 
     } catch (error) {
-
         await client.query("ROLLBACK");
 
         console.error("Error al actualizar el puesto:", error);
 
-        res.status(500).json({
-            message: "Error al actualizar el puesto"
+        return res.status(500).json({
+            mensaje: "Error al actualizar el puesto"
         });
 
     } finally {
         client.release();
     }
-
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 app.get("/obtenerProductosPuesto", async (req, res) => {
     const { id_puesto } = req.query;
@@ -1595,11 +1675,13 @@ app.put('/actualizarEstadoSolicitudPuestero', async (req, res) => {
 
 
 
+
 app.post('/insertarPuesto', async (req, res) => {
     const {
         id_usuario,
         nombre,
         descripcion,
+        historia,
         categoria,
         imagen_url,
         imagen_marca,
@@ -1650,6 +1732,7 @@ app.post('/insertarPuesto', async (req, res) => {
                 id_usuario,
                 nombre,
                 descripcion,
+                historia,
                 categoria,
                 imagen_url,
                 imagen_marca,
@@ -1660,12 +1743,13 @@ app.post('/insertarPuesto', async (req, res) => {
                 otro_enlace,
                 estado
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, true)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, true)
             RETURNING *`,
             [
                 id_usuario,
                 nombre,
                 descripcion || null,
+                historia || null,
                 categoria,
                 imagen_url || null,
                 imagen_marca || null,
@@ -1735,6 +1819,7 @@ app.post('/insertarPuesto', async (req, res) => {
 
 
 
+
 app.get("/obtenerDetallePuesto/:id_puesto", async (req, res) => {
 
     const { id_puesto } = req.params;
@@ -1748,6 +1833,7 @@ app.get("/obtenerDetallePuesto/:id_puesto", async (req, res) => {
                 id_usuario,
                 nombre,
                 descripcion,
+                historia,
                 categoria,
                 imagen_url,
                 imagen_marca,

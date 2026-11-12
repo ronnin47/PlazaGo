@@ -21,9 +21,10 @@ import { SeccionProductos } from './seccionProductos';
 const fondoPantallaConfiguracion =
   'https://res.cloudinary.com/dzul1hatw/image/upload/v1792521295/Fondo_org%C3%A1nico_verde_y_dorado_komwcn.png';
 
-const crearFormulario = (puesto) => ({
+const crearFormulario = (puesto = {}) => ({
   nombre: puesto.nombre || '',
   descripcion: puesto.descripcion || '',
+  historia: puesto.historia || '',
   categoria: puesto.categoria || '',
   imagen_url: puesto.imagen_url || '',
   imagen_marca: puesto.imagen_marca || '',
@@ -33,23 +34,39 @@ const crearFormulario = (puesto) => ({
   tiktok: puesto.tiktok || '',
   otro_enlace: puesto.otro_enlace || '',
   referentes: Array.isArray(puesto.referentes)
-    ? puesto.referentes.map((r) =>
-        typeof r === 'string' ? r : r.nombre || ''
-      )
-    : [''],
+    ? puesto.referentes.map((r) => ({
+        id_referente:
+          typeof r === 'string' ? null : r.id_referente || null,
+        nombre: typeof r === 'string' ? r : r.nombre || '',
+        imagen_url: typeof r === 'string' ? '' : r.imagen_url || '',
+      }))
+    : [],
 });
+
+
+
+
 
 export const PantallaMiPuesto = ({ puesto }) => {
   const { usuario } = useContext(AppContext);
-
   const [editando, setEditando] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [datos, setDatos] = useState(() => crearFormulario(puesto));
 
   useEffect(() => {
-    setDatos(crearFormulario(puesto));
-    setEditando(false);
+    if (puesto) {
+      setDatos(crearFormulario(puesto));
+      setEditando(false);
+    }
   }, [puesto]);
+
+
+
+console.log('========== PUESTO COMPLETO ==========');
+console.log(JSON.stringify(puesto, null, 2));
+console.log('======================================');
+
+
 
   const cambiarCampo = (campo, valor) => {
     setDatos((anterior) => ({
@@ -58,11 +75,13 @@ export const PantallaMiPuesto = ({ puesto }) => {
     }));
   };
 
-  const cambiarReferente = (indice, valor) => {
+  const cambiarReferente = (indice, campo, valor) => {
     setDatos((anterior) => ({
       ...anterior,
       referentes: anterior.referentes.map((referente, i) =>
-        i === indice ? valor : referente
+        i === indice
+          ? { ...referente, [campo]: valor }
+          : referente
       ),
     }));
   };
@@ -70,7 +89,14 @@ export const PantallaMiPuesto = ({ puesto }) => {
   const agregarReferente = () => {
     setDatos((anterior) => ({
       ...anterior,
-      referentes: [...anterior.referentes, ''],
+      referentes: [
+        ...anterior.referentes,
+        {
+          id_referente: null,
+          nombre: '',
+          imagen_url: '',
+        },
+      ],
     }));
   };
 
@@ -98,13 +124,30 @@ export const PantallaMiPuesto = ({ puesto }) => {
     }
 
     if (!datos.descripcion.trim()) {
-      Alert.alert('Falta información', 'Ingresá una presentación del puesto.');
+      Alert.alert(
+        'Falta información',
+        'Ingresá una presentación del puesto.'
+      );
       return;
     }
 
-    const referentes = datos.referentes
-      .map((nombre) => nombre.trim())
-      .filter((nombre) => nombre.length > 0);
+    const referentes = datos.referentes.map((referente) => ({
+      id_referente: referente.id_referente,
+      nombre: referente.nombre.trim(),
+      imagen_url: referente.imagen_url.trim(),
+    }));
+
+    const referenteIncompleto = referentes.some(
+      (referente) => !referente.nombre || !referente.imagen_url
+    );
+
+    if (referenteIncompleto) {
+      Alert.alert(
+        'Falta información',
+        'Cada referente debe tener nombre y fotografía. Completá ambos datos o eliminá el referente.'
+      );
+      return;
+    }
 
     setGuardando(true);
 
@@ -113,6 +156,7 @@ export const PantallaMiPuesto = ({ puesto }) => {
         id_usuario: usuario.id_usuario,
         nombre: datos.nombre.trim(),
         descripcion: datos.descripcion.trim(),
+        historia: datos.historia.trim(),
         categoria: datos.categoria.trim(),
         imagen_url: datos.imagen_url.trim(),
         imagen_marca: datos.imagen_marca.trim(),
@@ -124,12 +168,29 @@ export const PantallaMiPuesto = ({ puesto }) => {
         referentes,
       };
 
-      await axios.put(
+      const respuesta = await axios.put(
         `${API_URL}/actualizarPuesto/${puesto.id_puesto}`,
         payload
       );
 
-      Alert.alert('Puesto actualizado', 'Los cambios se guardaron correctamente.');
+      if (
+        respuesta.data &&
+        respuesta.data.puesto &&
+        Array.isArray(respuesta.data.puesto.referentes)
+      ) {
+        setDatos(crearFormulario(respuesta.data.puesto));
+      } else {
+        setDatos((anterior) => ({
+          ...anterior,
+          referentes,
+        }));
+      }
+
+      Alert.alert(
+        'Puesto actualizado',
+        'Los cambios se guardaron correctamente.'
+      );
+
       setEditando(false);
     } catch (error) {
       console.error(
@@ -148,11 +209,7 @@ export const PantallaMiPuesto = ({ puesto }) => {
     }
   };
 
-  const campoTexto = (
-    etiqueta,
-    campo,
-    opciones = {}
-  ) => (
+  const campoTexto = (etiqueta, campo, opciones = {}) => (
     <View style={styles.campo} key={campo}>
       <Text style={styles.label}>{etiqueta}</Text>
 
@@ -208,7 +265,9 @@ export const PantallaMiPuesto = ({ puesto }) => {
           />
         ) : (
           <Text style={styles.descripcionImagen}>
-            {datos[campo] ? 'Imagen configurada' : 'Sin imagen configurada'}
+            {datos[campo]
+              ? 'Imagen configurada'
+              : 'Sin imagen configurada'}
           </Text>
         )}
       </View>
@@ -218,7 +277,9 @@ export const PantallaMiPuesto = ({ puesto }) => {
   if (!puesto) {
     return (
       <View style={styles.cargando}>
-        <Text style={styles.valor}>No se encontró información del puesto.</Text>
+        <Text style={styles.valor}>
+          No se encontró información del puesto.
+        </Text>
       </View>
     );
   }
@@ -237,10 +298,15 @@ export const PantallaMiPuesto = ({ puesto }) => {
         >
           <View style={styles.encabezado}>
             <View style={styles.indicadorSeccion} />
-            <Text style={styles.etiqueta}>MI ESPACIO EN LA FERIA</Text>
+
+            <Text style={styles.etiqueta}>
+              MI ESPACIO EN LA FERIA
+            </Text>
+
             <Text style={styles.titulo}>
               {editando ? 'Editar mi puesto' : datos.nombre}
             </Text>
+
             <Text style={styles.subtitulo}>
               {editando
                 ? 'Modificá la información y guardá los cambios.'
@@ -248,59 +314,116 @@ export const PantallaMiPuesto = ({ puesto }) => {
             </Text>
           </View>
 
+          {/* INFORMACIÓN GENERAL */}
           <View style={styles.seccion}>
-            <Text style={styles.tituloSeccion}>Información general</Text>
+            <Text style={styles.tituloSeccion}>
+              Información general
+            </Text>
 
             {campoTexto('Nombre del puesto', 'nombre')}
             {campoTexto('Categoría', 'categoria')}
+
             {campoTexto('Presentación', 'descripcion', {
               multilinea: true,
               placeholder: 'Contá qué ofrecés en tu puesto',
+            })}
+
+            {campoTexto('Nuestra historia', 'historia', {
+              multilinea: true,
+              placeholder:
+                'Contá cómo comenzó tu emprendimiento, qué te motivó o alguna anécdota que quieras compartir...',
             })}
 
             {campoImagen('Imagen del puesto', 'imagen_url', '🏪')}
             {campoImagen('Imagen de marca', 'imagen_marca', '🌿')}
           </View>
 
+          {/* REFERENTES */}
           <View style={styles.seccion}>
-            <Text style={styles.tituloSeccion}>Referentes</Text>
+            <Text style={styles.tituloSeccion}>
+              Referentes
+            </Text>
+
             <Text style={styles.descripcionSeccion}>
               Personas de contacto asociadas a tu puesto.
             </Text>
 
             {datos.referentes.map((referente, indice) => (
-              <View style={styles.filaReferente} key={indice}>
+              <View
+                style={styles.filaReferente}
+                key={referente.id_referente || `nuevo-${indice}`}
+              >
                 <View style={styles.numeroReferente}>
                   <Text style={styles.numeroReferenteTexto}>
                     {indice + 1}
                   </Text>
                 </View>
 
-                {editando ? (
-                  <>
-                    <TextInput
-                      style={styles.inputReferente}
-                      value={referente}
-                      onChangeText={(valor) =>
-                        cambiarReferente(indice, valor)
-                      }
-                      placeholder="Nombre del referente"
-                      placeholderTextColor="#92998A"
-                    />
+                <View style={styles.contenidoReferente}>
+                  <View style={styles.vistaReferente}>
+                    {referente.imagen_url ? (
+                      <Image
+                        source={{ uri: referente.imagen_url }}
+                        style={styles.imagenReferente}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <View style={styles.imagenReferenteVacia}>
+                        <Text style={styles.iconoReferente}>👤</Text>
+                      </View>
+                    )}
 
-                    <TouchableOpacity
-                      style={styles.botonEliminar}
-                      onPress={() => eliminarReferente(indice)}
-                      accessibilityLabel="Eliminar referente"
-                    >
-                      <Text style={styles.textoEliminar}>×</Text>
-                    </TouchableOpacity>
-                  </>
-                ) : (
-                  <Text style={styles.valorReferente}>
-                    {referente || 'Sin nombre'}
-                  </Text>
-                )}
+                    {!editando && (
+                      <Text style={styles.valorReferente}>
+                        {referente.nombre || 'Sin nombre'}
+                      </Text>
+                    )}
+                  </View>
+
+                  {editando && (
+                    <>
+                      <TextInput
+                        style={styles.inputReferente}
+                        value={referente.nombre}
+                        onChangeText={(valor) =>
+                          cambiarReferente(indice, 'nombre', valor)
+                        }
+                        placeholder="Nombre del referente"
+                        placeholderTextColor="#92998A"
+                      />
+
+                      <Text style={styles.labelImagenReferente}>
+                        Fotografía del referente
+                      </Text>
+
+                      <TextInput
+                        style={styles.input}
+                        value={referente.imagen_url}
+                        onChangeText={(valor) =>
+                          cambiarReferente(
+                            indice,
+                            'imagen_url',
+                            valor
+                          )
+                        }
+                        placeholder="Pegá la URL de la imagen"
+                        placeholderTextColor="#92998A"
+                        autoCapitalize="none"
+                        keyboardType="url"
+                      />
+
+                      <TouchableOpacity
+                        style={styles.botonEliminar}
+                        onPress={() => eliminarReferente(indice)}
+                        accessibilityLabel="Eliminar referente"
+                      >
+                        <Text style={styles.textoEliminar}>
+                          × Eliminar referente
+                        </Text>
+                      </TouchableOpacity>
+                    </>
+                  )}
+                </View>
               </View>
             ))}
 
@@ -309,29 +432,38 @@ export const PantallaMiPuesto = ({ puesto }) => {
                 style={styles.botonAgregar}
                 onPress={agregarReferente}
               >
-                <Text style={styles.textoAgregar}>+ Agregar referente</Text>
+                <Text style={styles.textoAgregar}>
+                  + Agregar referente
+                </Text>
               </TouchableOpacity>
             )}
           </View>
 
+          {/* CONTACTO Y REDES */}
           <View style={styles.seccion}>
-            <Text style={styles.tituloSeccion}>Contacto y redes</Text>
+            <Text style={styles.tituloSeccion}>
+              Contacto y redes
+            </Text>
 
             {campoTexto('Teléfono', 'telefono', {
               keyboardType: 'phone-pad',
             })}
+
             {campoTexto('Instagram', 'instagram', {
               autoCapitalize: 'none',
               autoCorrect: false,
             })}
+
             {campoTexto('Facebook', 'facebook', {
               autoCapitalize: 'none',
               autoCorrect: false,
             })}
+
             {campoTexto('TikTok', 'tiktok', {
               autoCapitalize: 'none',
               autoCorrect: false,
             })}
+
             {campoTexto('Otro enlace', 'otro_enlace', {
               autoCapitalize: 'none',
               autoCorrect: false,
@@ -339,17 +471,23 @@ export const PantallaMiPuesto = ({ puesto }) => {
             })}
           </View>
 
+          {/* BOTONES */}
           {editando ? (
             <View style={styles.botonesAccion}>
               <TouchableOpacity
-                style={[styles.botonGuardar, guardando && styles.deshabilitado]}
+                style={[
+                  styles.botonGuardar,
+                  guardando && styles.deshabilitado,
+                ]}
                 onPress={guardarCambios}
                 disabled={guardando}
               >
                 {guardando ? (
                   <ActivityIndicator color="#FFFFFF" />
                 ) : (
-                  <Text style={styles.textoGuardar}>Guardar cambios</Text>
+                  <Text style={styles.textoGuardar}>
+                    Guardar cambios
+                  </Text>
                 )}
               </TouchableOpacity>
 
@@ -358,7 +496,9 @@ export const PantallaMiPuesto = ({ puesto }) => {
                 onPress={cancelarEdicion}
                 disabled={guardando}
               >
-                <Text style={styles.textoCancelar}>Cancelar</Text>
+                <Text style={styles.textoCancelar}>
+                  Cancelar
+                </Text>
               </TouchableOpacity>
             </View>
           ) : (
@@ -366,17 +506,20 @@ export const PantallaMiPuesto = ({ puesto }) => {
               style={styles.botonGuardar}
               onPress={() => setEditando(true)}
             >
-              <Text style={styles.textoGuardar}>Editar puesto</Text>
+              <Text style={styles.textoGuardar}>
+                Editar puesto
+              </Text>
+
               <Text style={styles.flechaGuardar}>✎</Text>
             </TouchableOpacity>
           )}
 
-          <Text style={styles.pie}>MI PUESTO · FERIAS</Text>
-        
-        
-          <GaleriaFeriasProximas></GaleriaFeriasProximas>
+          <Text style={styles.pie}>
+            MI PUESTO · FERIAS
+          </Text>
+
+          <GaleriaFeriasProximas />
           <SeccionProductos puesto={puesto} />
-        
         </ScrollView>
       </View>
     </ImageBackground>
@@ -518,10 +661,12 @@ const styles = StyleSheet.create({
     fontSize: 12,
     lineHeight: 18,
   },
+
+  // REFERENTES
   filaReferente: {
     flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 10,
+    alignItems: 'flex-start',
+    marginTop: 14,
   },
   numeroReferente: {
     width: 31,
@@ -537,8 +682,40 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     fontSize: 13,
   },
-  inputReferente: {
+  contenidoReferente: {
     flex: 1,
+    gap: 9,
+  },
+  vistaReferente: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    minHeight: 58,
+  },
+  imagenReferente: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#E8EDD9',
+  },
+  imagenReferenteVacia: {
+    width: 58,
+    height: 58,
+    borderRadius: 29,
+    backgroundColor: '#E8EDD9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  iconoReferente: {
+    fontSize: 25,
+  },
+  labelImagenReferente: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#56664A',
+    marginTop: 4,
+  },
+  inputReferente: {
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#DDE3D4',
@@ -555,17 +732,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   botonEliminar: {
-    width: 34,
-    height: 39,
-    marginLeft: 7,
+    alignSelf: 'flex-start',
+    paddingVertical: 7,
+    paddingHorizontal: 10,
     borderRadius: 9,
     backgroundColor: '#F7E9E5',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   textoEliminar: {
     color: '#9C4239',
-    fontSize: 23,
+    fontSize: 12,
+    fontWeight: '700',
   },
   botonAgregar: {
     alignSelf: 'flex-start',
@@ -580,6 +756,8 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '800',
   },
+
+  // ACCIONES
   botonesAccion: {
     gap: 10,
     marginTop: 5,

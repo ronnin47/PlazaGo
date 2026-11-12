@@ -41,8 +41,12 @@ const [puestos,setPuestos]=useState([]);
 const [productosDestacados, setProductosDestacados] = useState([]);
   const navigation = useNavigation();
 
+
+
+  const [favoritos, setFavoritos] = useState([]);
 // vamos a asumir que cuando entra a una receta en ese momento se guarda en el historial de busquedas, y si ya estaba no se repite, y solo se mantiene un maximo de 5 ultimas busquedas
 // y eso lo guardamos en el contexto, y lo mostramos en la pantalla de inicio, y si no hay ultimas busquedas mostramos un mensaje que diga "Todavía no realizaste ninguna búsqueda."
+
 
 useEffect(() => {
   obtenerProximaFeria();
@@ -69,6 +73,36 @@ const obtenerProductosDestacados = async () => {
   }
 };
 
+
+const obtenerFavoritos = async () => {
+  if (!usuario?.id_usuario) {
+    setFavoritos([]);
+    return;
+  }
+
+  try {
+    const respuesta = await axios.get(
+      `${API_URL}/obtenerFavoritos/${usuario.id_usuario}`
+    );
+
+    setFavoritos(
+      Array.isArray(respuesta.data)
+        ? respuesta.data.map(puesto => Number(puesto.id_puesto))
+        : []
+    );
+
+  } catch (error) {
+    console.error(
+      'Error al obtener favoritos:',
+      error.response?.data || error.message
+    );
+
+    setFavoritos([]);
+  }
+};
+useEffect(() => {
+  obtenerFavoritos();
+}, [usuario?.id_usuario]);
 const obtenerClima = async (fechaFeria) => {
   if (!fechaFeria) return;
 
@@ -301,6 +335,17 @@ const obtenerDescripcionClima = (codigo) => {
   return 'Clima variable';
 };
 
+
+
+console.log('FAVORITOS:', favoritos);
+
+console.log(
+  'PUESTOS:',
+  puestos.map(p => ({
+    id_puesto: p.id_puesto,
+    esFavorito: favoritos.includes(Number(p.id_puesto))
+  }))
+);
 
 return (
   <ImageBackground
@@ -619,6 +664,7 @@ return (
   <CardPuestero
     key={puesto.id_inscripcion}
     puesto={puesto}
+    esFavorito={favoritos.includes(Number(puesto.id_puesto))}
     onPress={() =>
       navigation.navigate('PantallaUserVerPuesto', {
         id_puesto: puesto.id_puesto,

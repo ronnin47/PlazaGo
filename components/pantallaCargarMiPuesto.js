@@ -102,6 +102,10 @@ const CampoImagen = ({
   </View>
 );
 
+
+
+
+//PANTALLA QUE APARECE SOLO CUANDO ES LA PRIMERA VEZ QUE EL USUARIO INGRESA A SU PERFIL DE PUESTERO, PARA CARGAR SU PUESTO
 export const PantallaCargarMiPuesto = ({ consumirMiPuesto }) => {
   const { usuario } = useContext(AppContext);
   const navigation = useNavigation();
@@ -125,6 +129,8 @@ export const PantallaCargarMiPuesto = ({ consumirMiPuesto }) => {
   const [facebook, setFacebook] = useState('');
   const [tiktok, setTiktok] = useState('');
   const [otroEnlace, setOtroEnlace] = useState('');
+
+const [historia, setHistoria] = useState('');
 
   const [guardando, setGuardando] = useState(false);
 
@@ -208,6 +214,7 @@ export const PantallaCargarMiPuesto = ({ consumirMiPuesto }) => {
       id_usuario: usuario.id_usuario,
       nombre: nombrePuesto.trim(),
       descripcion: presentacion.trim(),
+      historia: historia.trim(),
       categoria: tipoPuesto,
       imagen_url: imagenPuesto.trim(),
       imagen_marca: imagenMarca.trim(),
@@ -466,6 +473,33 @@ Alert.alert(
               {presentacion.length} caracteres
             </Text>
           </View>
+
+          {/* HISTORIA */}
+<View style={styles.seccion}>
+  <View style={styles.encabezadoSeccion}>
+    <Text style={styles.numeroSeccion}>04</Text>
+    <View style={styles.flex}>
+      <Text style={styles.tituloSeccion}>
+        Nuestra historia
+      </Text>
+      <Text style={styles.descripcionSeccion}>
+        Compartí algo sobre el origen de tu emprendimiento.
+      </Text>
+    </View>
+  </View>
+
+  <Campo
+    etiqueta="LA HISTORIA DE TU PUESTO"
+    valor={historia}
+    cambiar={setHistoria}
+    placeholder="¿Cómo comenzó todo? ¿Qué te motivó a emprender? Contá lo que quieras compartir..."
+    multilinea
+  />
+
+  <Text style={styles.contador}>
+    {historia.length} caracteres
+  </Text>
+</View>
 
           {/* CONTACTO */}
           <View style={styles.seccion}>

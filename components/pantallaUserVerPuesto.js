@@ -13,6 +13,7 @@ import {
   Linking,
 } from 'react-native';
 
+import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import axios from 'axios';
 import API_URL from '../config/apiConfig';
@@ -631,89 +632,118 @@ export const PantallaUserVerPuesto = () => {
               </Text>
             )}
           </View>
+          {/* HISTORIA DEL EMPRENDIMIENTO */}
+
+{puesto?.historia ? (
+  <View style={styles.tarjetaHistoria}>
+
+    <Text style={styles.etiquetaHistoria}>
+      NUESTRA HISTORIA
+    </Text>
+
+    <Text style={styles.textoHistoria}>
+      {puesto.historia}
+    </Text>
+
+  </View>
+) : null}
         </View>
 
-        {/* 4. CONTACTO DEL PUESTO */}
+       {/* 4. CONTACTO DEL PUESTO */}
 
-        <View style={styles.seccionContacto}>
+<View style={styles.seccionContacto}>
 
-          <View style={styles.encabezadoSeccion}>
-            <View style={styles.indicadorSeccion} />
+  <View style={styles.encabezadoSeccion}>
+    <View style={styles.indicadorSeccion} />
+    <Text style={styles.tituloSeccion}>
+      CONECTÁ CON EL PUESTO
+    </Text>
+  </View>
 
-            <Text style={styles.tituloSeccion}>
-              CONECTÁ CON EL PUESTO
-            </Text>
-          </View>
+  <View style={styles.tarjetaContacto}>
 
-          <View style={styles.tarjetaContacto}>
-
-            {puesto.telefono && (
-              <TouchableOpacity
-                style={styles.botonContacto}
-                onPress={() =>
-                  abrirEnlace(
-                    `https://wa.me/${puesto.telefono.replace(/\D/g, '')}`
-                  )
-                }
-              >
-                <Text style={styles.iconoContacto}>☎</Text>
-                <Text style={styles.textoContacto}>WhatsApp</Text>
-              </TouchableOpacity>
-            )}
-
-            {puesto.instagram && (
-              <TouchableOpacity
-                style={styles.botonContacto}
-                onPress={() => abrirEnlace(puesto.instagram)}
-              >
-                <Text style={styles.iconoContacto}>◎</Text>
-                <Text style={styles.textoContacto}>Instagram</Text>
-              </TouchableOpacity>
-            )}
-
-            {puesto.facebook && (
-              <TouchableOpacity
-                style={styles.botonContacto}
-                onPress={() => abrirEnlace(puesto.facebook)}
-              >
-                <Text style={styles.iconoContacto}>f</Text>
-                <Text style={styles.textoContacto}>Facebook</Text>
-              </TouchableOpacity>
-            )}
-
-            {puesto.tiktok && (
-              <TouchableOpacity
-                style={styles.botonContacto}
-                onPress={() => abrirEnlace(puesto.tiktok)}
-              >
-                <Text style={styles.iconoContacto}>♪</Text>
-                <Text style={styles.textoContacto}>TikTok</Text>
-              </TouchableOpacity>
-            )}
-
-            {puesto.otro_enlace && (
-              <TouchableOpacity
-                style={styles.botonContacto}
-                onPress={() => abrirEnlace(puesto.otro_enlace)}
-              >
-                <Text style={styles.iconoContacto}>↗</Text>
-                <Text style={styles.textoContacto}>
-                  Más información
-                </Text>
-              </TouchableOpacity>
-            )}
-
-            {!puesto.telefono &&
-              !puesto.instagram &&
-              !puesto.facebook &&
-              !puesto.tiktok &&
-              !puesto.otro_enlace && (
-                <Text style={styles.textoSinContacto}>
-                  Este puesto todavía no publicó medios de contacto.
-                </Text>
-              )}
-          </View>
+    {puesto.telefono && (
+      <TouchableOpacity
+        style={styles.botonContacto}
+        onPress={() =>
+          abrirEnlace(
+            `https://wa.me/${puesto.telefono.replace(/\D/g, '')}`
+          )
+        }
+      >
+        <Ionicons name="logo-whatsapp" size={34} color="#25D366" />
+        <View>
+          <Text style={styles.textoContacto}>WhatsApp</Text>
+          <Text style={styles.textoContacto}>
+            {puesto.telefono}
+          </Text>
         </View>
+      </TouchableOpacity>
+    )}
+
+    {puesto.instagram && (
+      <TouchableOpacity
+        style={styles.botonContacto}
+        onPress={() =>
+          abrirEnlace(
+            puesto.instagram.startsWith('http')
+              ? puesto.instagram
+              : `https://www.instagram.com/${puesto.instagram.replace('@', '')}/`
+          )
+        }
+      >
+        <Ionicons name="logo-instagram" size={34} color="#E1306C" />
+        <View>
+          <Text style={styles.textoContacto}>Instagram</Text>
+          <Text style={styles.textoContacto}>
+            @{puesto.instagram.replace('@', '')}
+          </Text>
+        </View>
+      </TouchableOpacity>
+    )}
+
+    {puesto.facebook && (
+      <TouchableOpacity
+        style={styles.botonContacto}
+        onPress={() => abrirEnlace(puesto.facebook)}
+      >
+        <Ionicons name="logo-facebook" size={34} color="#1877F2" />
+        <Text style={styles.textoContacto}>Facebook</Text>
+      </TouchableOpacity>
+    )}
+
+    {puesto.tiktok && (
+      <TouchableOpacity
+        style={styles.botonContacto}
+        onPress={() => abrirEnlace(puesto.tiktok)}
+      >
+        <Ionicons name="logo-tiktok" size={34} color="#000000" />
+        <Text style={styles.textoContacto}>TikTok</Text>
+      </TouchableOpacity>
+    )}
+
+    {puesto.otro_enlace && (
+      <TouchableOpacity
+        style={styles.botonContacto}
+        onPress={() => abrirEnlace(puesto.otro_enlace)}
+      >
+        <Ionicons name="link-outline" size={34} color="#D9B95B" />
+        <Text style={styles.textoContacto}>Más información</Text>
+      </TouchableOpacity>
+    )}
+
+    {!puesto.telefono &&
+      !puesto.instagram &&
+      !puesto.facebook &&
+      !puesto.tiktok &&
+      !puesto.otro_enlace && (
+        <Text style={styles.textoSinContacto}>
+          Este puesto todavía no publicó medios de contacto.
+        </Text>
+      )}
+
+  </View>
+</View>
 
         {/* PIE DE PÁGINA */}
 
@@ -1232,5 +1262,49 @@ botonFavorito: {
     marginTop: 7,
     textAlign: 'center',
   },
+  tarjetaHistoria: {
+  backgroundColor: '#F3F1E9',
+  borderRadius: 14,
+  padding: 16,
+  marginBottom: 18,
+  borderWidth: 1,
+  borderColor: '#D9B95B',
+},
+
+etiquetaHistoria: {
+  fontSize: 11,
+  fontWeight: 'bold',
+  color: '#9A7930',
+  letterSpacing: 1.2,
+  marginBottom: 9,
+},
+
+textoHistoria: {
+  fontSize: 14,
+  color: '#30382F',
+  lineHeight: 22,
+  textAlign: 'left',
+},
+botonContacto: {
+  flexDirection: 'row',
+  alignItems: 'center',
+  paddingVertical: 14,
+  paddingHorizontal: 16,
+  gap: 16,
+  marginBottom: 10,
+  backgroundColor: '#F3F1E9',
+  borderRadius: 12,
+},
+
+iconoContacto: {
+  width: 42,
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+
+textoContacto: {
+  fontSize: 14,
+  color: '#26382A',
+},
 
 });
