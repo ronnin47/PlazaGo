@@ -72,7 +72,7 @@ export const PantallaLogin = ({ navigation }) => {
 
           <View style={styles.logoContenedor}>
             <Image
-              source={require('../Assets/iconPlazaGO.png')}
+              source={require('../assets/iconPlazaGO.png')}
               style={styles.logo}
               resizeMode="contain"
             />

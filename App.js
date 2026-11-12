@@ -12,6 +12,8 @@ import { PantallaMiPlaza } from './components/pantallaMiPlaza.js';
 import { PantallaConfiguracion } from './components/pantallaConfiguracion';
 import { PantallaLogin } from './components/pantallaLogin';
 
+
+
 import { PantallaAdministrador } from './components/pantallaAdministrador';
 
 import { PantallaRegistro } from './components/pantallaRegistro';

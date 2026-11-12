@@ -87,7 +87,7 @@ consumirMiPuesto();
 ) : puesto ? (
   <PantallaMiPuesto puesto={puesto}/>
 ) : (
-  <PantallaCargarMiPuesto />
+  <PantallaCargarMiPuesto consumirMiPuesto={consumirMiPuesto} setPuesto={setPuesto}/>
 )}
 
 

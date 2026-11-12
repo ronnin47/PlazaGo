@@ -99,7 +99,7 @@ export const PantallaRegistroPuestero = ({ navigation }) => {
         <View style={styles.encabezado}>
           <View style={styles.logoContenedor}>
             <Image
-              source={require('../Assets/iconPlazaGO.png')}
+              source={require('../assets/iconPlazaGO.png')}
               style={styles.logo}
               resizeMode="contain"
             />

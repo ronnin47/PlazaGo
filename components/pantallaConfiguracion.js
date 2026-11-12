@@ -94,7 +94,7 @@ export const PantallaConfiguracion = () => {
        <View style={styles.filaAplicacion}>
 
   <Image
-    source={require('../Assets/leo1.png')}
+    source={require('../assets/leo1.png')}
     style={styles.imagenLeo}
     resizeMode="contain"
   />

@@ -12,6 +12,7 @@ import {
 import { AppContext } from '../provider/AppProvider';
 import { useEffect } from 'react';
 
+
 import { useNavigation } from '@react-navigation/native';
 import API_URL from '../config/apiConfig';
 
@@ -19,7 +20,7 @@ import API_URL from '../config/apiConfig';
 console.log('API_URL en PantallaHome:', API_URL);
 import axios from 'axios';
 
-
+import {CardPuestero} from './cardPuestero';
 
 
 const fondoPantallaHome2="https://res.cloudinary.com/dzul1hatw/image/upload/v1792521295/Fondo_org%C3%A1nico_verde_y_dorado_komwcn.png"
@@ -604,64 +605,12 @@ return (
     showsHorizontalScrollIndicator={false}
     contentContainerStyle={styles.listaPuestos}
   >
-    {puestos.map((puesto) => (
-      <View
-        key={puesto.id_inscripcion}
-        style={styles.tarjetaPuesto}
-      >
-        <View style={styles.contenedorImagenPuesto}>
-          <Image
-            source={{ uri: puesto.imagen_url }}
-            style={styles.imagenPuesto}
-            resizeMode="cover"
-          />
-
-          <View style={styles.etiquetaPuesto}>
-            <Text style={styles.textoEtiquetaPuesto}>
-              FERIA DE PRIMAVERA
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.contenidoPuesto}>
-          <Text style={styles.etiquetaPuestero}>
-            PUESTERO
-          </Text>
-
-          <Text
-            style={styles.nombrePuestero}
-            numberOfLines={2}
-          >
-            {Array.isArray(puesto.referentes)
-              ? puesto.referentes
-                  .map((referente) =>
-                    typeof referente === 'string'
-                      ? referente
-                      : referente.nombre
-                  )
-                  .filter(Boolean)
-                  .join(' & ') || 'Sin referentes asignados'
-              : puesto.nombre_referente || 'Sin referentes asignados'}
-          </Text>
-
-          <View style={styles.separadorPuesto} />
-
-          <Text
-  style={styles.nombrePuesto}
-  numberOfLines={2}
->
-  {puesto.nombre_puesto}
-</Text>
-
-<Text
-  style={styles.etiquetaPuestero}
-  numberOfLines={1}
->
-  {puesto.categoria || 'Sin categoría'}
-</Text>
-        </View>
-      </View>
-    ))}
+   {puestos.map((puesto) => (
+  <CardPuestero
+    key={puesto.id_inscripcion}
+    puesto={puesto}
+  />
+))}
   </ScrollView>
 </View>
 

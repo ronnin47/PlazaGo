@@ -527,6 +527,7 @@ app.get("/proximaFeria", async (req, res) => {
     }
 });
 
+
 app.get("/obtenerPuestosAprobadosFeria", async (req, res) => {
     const { id_feria } = req.query;
 
@@ -544,30 +545,51 @@ app.get("/obtenerPuestosAprobadosFeria", async (req, res) => {
                 p.nombre AS nombre_puesto,
                 p.descripcion AS descripcion_puesto,
                 p.imagen_url,
+                p.imagen_marca,
                 p.categoria AS categoria,
                 u.nombre AS nombre_puestero,
                 u.apellido AS apellido_puestero,
-                ARRAY_AGG(r.nombre ORDER BY r.id_referente)
-                    FILTER (WHERE r.id_referente IS NOT NULL) AS referentes
+
+                COALESCE(
+                    JSON_AGG(
+                        JSON_BUILD_OBJECT(
+                            'id_referente', r.id_referente,
+                            'nombre', r.nombre,
+                            'imagen_url', r.imagen_url
+                        )
+                        ORDER BY r.id_referente
+                    ) FILTER (
+                        WHERE r.id_referente IS NOT NULL
+                    ),
+                    '[]'::json
+                ) AS referentes
+
             FROM inscripciones_ferias i
+
             INNER JOIN puestos p
                 ON p.id_puesto = i.id_puesto
+
             INNER JOIN usuarios u
                 ON u.id_usuario = p.id_usuario
+
             LEFT JOIN referentes_puesto r
                 ON r.id_puesto = p.id_puesto
+
             WHERE i.id_feria = $1
               AND i.estado = 'aprobado'
+
             GROUP BY
                 i.id_inscripcion,
                 p.id_puesto,
                 p.nombre,
                 p.descripcion,
                 p.imagen_url,
+                p.imagen_marca,
                 p.categoria,
                 u.nombre,
                 u.apellido,
                 i.fecha_respuesta
+
             ORDER BY i.fecha_respuesta DESC NULLS LAST`,
             [id_feria]
         );
@@ -585,6 +607,7 @@ app.get("/obtenerPuestosAprobadosFeria", async (req, res) => {
         });
     }
 });
+
 
 //ADMINISTRADOR - USUARIOS
 app.get("/obtenerTodosLosUsuarios", async (req, res) => {
@@ -1571,6 +1594,136 @@ app.put('/actualizarEstadoSolicitudPuestero', async (req, res) => {
 });
 
 
+
+app.post('/insertarPuesto', async (req, res) => {
+    const {
+        id_usuario,
+        nombre,
+        descripcion,
+        categoria,
+        imagen_url,
+        imagen_marca,
+        telefono,
+        instagram,
+        facebook,
+        tiktok,
+        otro_enlace,
+        referentes
+    } = req.body;
+
+    if (!id_usuario || !nombre || !categoria) {
+        return res.status(400).json({
+            mensaje: 'Faltan datos obligatorios del puesto.'
+        });
+    }
+
+    if (!Array.isArray(referentes) || referentes.length === 0) {
+        return res.status(400).json({
+            mensaje: 'El puesto debe tener al menos un referente.'
+        });
+    }
+
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // Verificar que el usuario no tenga ya un puesto
+        const puestoExistente = await client.query(
+            `SELECT id_puesto
+             FROM puestos
+             WHERE id_usuario = $1`,
+            [id_usuario]
+        );
+
+        if (puestoExistente.rows.length > 0) {
+            await client.query('ROLLBACK');
+
+            return res.status(409).json({
+                mensaje: 'El usuario ya tiene un puesto registrado.'
+            });
+        }
+
+        // Insertar puesto
+        const resultadoPuesto = await client.query(
+            `INSERT INTO puestos (
+                id_usuario,
+                nombre,
+                descripcion,
+                categoria,
+                imagen_url,
+                imagen_marca,
+                telefono,
+                instagram,
+                facebook,
+                tiktok,
+                otro_enlace,
+                estado
+            )
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, true)
+            RETURNING *`,
+            [
+                id_usuario,
+                nombre,
+                descripcion || null,
+                categoria,
+                imagen_url || null,
+                imagen_marca || null,
+                telefono || null,
+                instagram || null,
+                facebook || null,
+                tiktok || null,
+                otro_enlace || null
+            ]
+        );
+
+        const puesto = resultadoPuesto.rows[0];
+
+        // Insertar referentes asociados al puesto
+        for (const referente of referentes) {
+            if (!referente.nombre || !referente.imagen_url) {
+                throw new Error('Cada referente debe tener nombre e imagen.');
+            }
+
+            await client.query(
+                `INSERT INTO referentes_puesto (
+                    id_puesto,
+                    nombre,
+                    imagen_url
+                )
+                VALUES ($1, $2, $3)`,
+                [
+                    puesto.id_puesto,
+                    referente.nombre,
+                    referente.imagen_url
+                ]
+            );
+        }
+
+        await client.query('COMMIT');
+
+        res.status(201).json({
+            mensaje: 'Puesto registrado correctamente.',
+            puesto: {
+                ...puesto,
+                referentes
+            }
+        });
+
+    } catch (error) {
+        await client.query('ROLLBACK');
+
+        console.error('Error al insertar puesto:', error);
+
+        res.status(500).json({
+            mensaje: 'Error al registrar el puesto.',
+            error: error.message
+        });
+
+    } finally {
+        client.release();
+    }
+});
 
 
 const comprobarConexion = async () => {

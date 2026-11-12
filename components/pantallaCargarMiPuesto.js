@@ -14,6 +14,9 @@ import {
 } from 'react-native';
 import { AppContext } from '../provider/AppProvider';
 import API_URL from '../config/apiConfig';
+import axios from 'axios';
+
+import { useNavigation } from '@react-navigation/native';
 
 const TIPOS_PUESTO = [
   'Artesanías',
@@ -26,8 +29,82 @@ const TIPOS_PUESTO = [
   'Otros',
 ];
 
-export const PantallaCargarMiPuesto = () => {
+const Campo = ({
+  etiqueta,
+  valor,
+  cambiar,
+  placeholder,
+  multilinea,
+  teclado,
+}) => (
+  <View style={styles.campo}>
+    <Text style={styles.label}>{etiqueta}</Text>
+
+    <TextInput
+      style={[
+        styles.input,
+        multilinea && styles.inputMultilinea,
+      ]}
+      value={valor}
+      onChangeText={cambiar}
+      placeholder={placeholder}
+      placeholderTextColor="#969D8C"
+      multiline={!!multilinea}
+      keyboardType={teclado || 'default'}
+      autoCapitalize="sentences"
+    />
+  </View>
+);
+
+const CampoImagen = ({
+  titulo,
+  descripcion,
+  valor,
+  cambiar,
+  principal,
+}) => (
+  <View style={styles.tarjetaImagen}>
+    <View
+      style={[
+        styles.vistaImagen,
+        principal && styles.vistaImagenPrincipal,
+      ]}
+    >
+      {valor.trim() ? (
+        <Image
+          source={{ uri: valor.trim() }}
+          style={styles.imagen}
+          resizeMode="cover"
+        />
+      ) : (
+        <Text style={styles.iconoImagen}>
+          {principal ? '🏕️' : '🏷️'}
+        </Text>
+      )}
+    </View>
+
+    <View style={styles.contenidoImagen}>
+      <Text style={styles.tituloImagen}>{titulo}</Text>
+      <Text style={styles.descripcionImagen}>
+        {descripcion}
+      </Text>
+
+      <TextInput
+        style={styles.inputImagen}
+        value={valor}
+        onChangeText={cambiar}
+        placeholder="Pegá la URL de la imagen"
+        placeholderTextColor="#969D8C"
+        autoCapitalize="none"
+        keyboardType="url"
+      />
+    </View>
+  </View>
+);
+
+export const PantallaCargarMiPuesto = ({ consumirMiPuesto }) => {
   const { usuario } = useContext(AppContext);
+  const navigation = useNavigation();
 
   const fondoPantallaConfiguracion =
     'https://res.cloudinary.com/dzul1hatw/image/upload/v1792521295/Fondo_org%C3%A1nico_verde_y_dorado_komwcn.png';
@@ -39,7 +116,9 @@ export const PantallaCargarMiPuesto = () => {
   const [imagenPuesto, setImagenPuesto] = useState('');
   const [imagenMarca, setImagenMarca] = useState('');
 
-  const [referentes, setReferentes] = useState(['']);
+  const [referentes, setReferentes] = useState([
+    { nombre: '', imagen_url: '' },
+  ]);
 
   const [telefono, setTelefono] = useState('');
   const [instagram, setInstagram] = useState('');
@@ -49,16 +128,21 @@ export const PantallaCargarMiPuesto = () => {
 
   const [guardando, setGuardando] = useState(false);
 
-  const actualizarReferente = (texto, indice) => {
+  const actualizarReferente = (campo, texto, indice) => {
     setReferentes((anteriores) =>
-      anteriores.map((nombre, i) =>
-        i === indice ? texto : nombre
+      anteriores.map((referente, i) =>
+        i === indice
+          ? { ...referente, [campo]: texto }
+          : referente
       )
     );
   };
 
   const agregarReferente = () => {
-    setReferentes((anteriores) => [...anteriores, '']);
+    setReferentes((anteriores) => [
+      ...anteriores,
+      { nombre: '', imagen_url: '' },
+    ]);
   };
 
   const eliminarReferente = (indice) => {
@@ -76,97 +160,99 @@ export const PantallaCargarMiPuesto = () => {
   };
 
   const guardarConfiguracion = async () => {
-    if (
-      !nombrePuesto.trim() ||
-      !tipoPuesto ||
-      !referentes.some((nombre) => nombre.trim())
-    ) {
+    if (!usuario?.id_usuario) {
       Alert.alert(
-        'Datos incompletos',
-        'Ingresá el nombre del puesto, su tipo y al menos un referente.'
+        'Error',
+        'No se pudo identificar al usuario.'
       );
       return;
     }
 
-    // Pendiente: conectar con el endpoint real de PlazaGo.
-    Alert.alert(
-      'Configuración preparada',
-      'Los datos están listos para conectarse al guardado del backend.'
+    if (
+      !nombrePuesto.trim() ||
+      !tipoPuesto ||
+      !referentes.some(
+        (referente) =>
+          referente.nombre.trim() &&
+          referente.imagen_url.trim()
+      )
+    ) {
+      Alert.alert(
+        'Datos incompletos',
+        'Ingresá el nombre del puesto, su tipo y al menos un referente con su imagen.'
+      );
+      return;
+    }
+
+    const referentesValidos = referentes.filter(
+      (referente) =>
+        referente.nombre.trim() ||
+        referente.imagen_url.trim()
     );
+
+    const referenteIncompleto = referentesValidos.some(
+      (referente) =>
+        !referente.nombre.trim() ||
+        !referente.imagen_url.trim()
+    );
+
+    if (referenteIncompleto) {
+      Alert.alert(
+        'Referentes incompletos',
+        'Cada referente debe tener nombre e imagen.'
+      );
+      return;
+    }
+
+    const datos = {
+      id_usuario: usuario.id_usuario,
+      nombre: nombrePuesto.trim(),
+      descripcion: presentacion.trim(),
+      categoria: tipoPuesto,
+      imagen_url: imagenPuesto.trim(),
+      imagen_marca: imagenMarca.trim(),
+      telefono: telefono.trim(),
+      instagram: instagram.trim(),
+      facebook: facebook.trim(),
+      tiktok: tiktok.trim(),
+      otro_enlace: otroEnlace.trim(),
+
+      referentes: referentesValidos.map((referente) => ({
+        nombre: referente.nombre.trim(),
+        imagen_url: referente.imagen_url.trim(),
+      })),
+    };
+
+    try {
+      setGuardando(true);
+
+      const respuesta = await axios.post(
+        `${API_URL}/insertarPuesto`,
+        datos
+      );
+
+await consumirMiPuesto();
+
+Alert.alert(
+  'Puesto registrado',
+  respuesta.data.mensaje
+);
+    } catch (error) {
+      console.error(
+        'Error al registrar puesto:',
+        error.response?.data || error.message
+      );
+
+      Alert.alert(
+        'Error',
+        error.response?.data?.mensaje ||
+        'No se pudo registrar el puesto. Intentá nuevamente.'
+      );
+
+    } finally {
+      setGuardando(false);
+    }
   };
-
-  const Campo = ({
-    etiqueta,
-    valor,
-    cambiar,
-    placeholder,
-    multilinea,
-    teclado,
-  }) => (
-    <View style={styles.campo}>
-      <Text style={styles.label}>{etiqueta}</Text>
-
-      <TextInput
-        style={[
-          styles.input,
-          multilinea && styles.inputMultilinea,
-        ]}
-        value={valor}
-        onChangeText={cambiar}
-        placeholder={placeholder}
-        placeholderTextColor="#969D8C"
-        multiline={!!multilinea}
-        keyboardType={teclado || 'default'}
-        autoCapitalize="sentences"
-      />
-    </View>
-  );
-
-  const CampoImagen = ({
-    titulo,
-    descripcion,
-    valor,
-    cambiar,
-    principal,
-  }) => (
-    <View style={styles.tarjetaImagen}>
-      <View
-        style={[
-          styles.vistaImagen,
-          principal && styles.vistaImagenPrincipal,
-        ]}
-      >
-        {valor.trim() ? (
-          <Image
-            source={{ uri: valor.trim() }}
-            style={styles.imagen}
-            resizeMode="cover"
-          />
-        ) : (
-          <Text style={styles.iconoImagen}>
-            {principal ? '🏕️' : '🏷️'}
-          </Text>
-        )}
-      </View>
-
-      <View style={styles.contenidoImagen}>
-        <Text style={styles.tituloImagen}>{titulo}</Text>
-        <Text style={styles.descripcionImagen}>
-          {descripcion}
-        </Text>
-
-        <TextInput
-          style={styles.inputImagen}
-          value={valor}
-          onChangeText={cambiar}
-          placeholder="Pegá la URL de la imagen"
-          placeholderTextColor="#969D8C"
-          autoCapitalize="none"
-          keyboardType="url"
-        />
-      </View>
-    </View>
-  );
 
   return (
     <ImageBackground
@@ -182,7 +268,9 @@ export const PantallaCargarMiPuesto = () => {
         >
           <View style={styles.encabezado}>
             <View style={styles.indicadorSeccion} />
-            <Text style={styles.etiqueta}>PLAZAGO · MI ESPACIO</Text>
+            <Text style={styles.etiqueta}>
+              PLAZAGO · MI ESPACIO
+            </Text>
 
             <Text style={styles.titulo}>
               Configurá tu puesto
@@ -209,7 +297,9 @@ export const PantallaCargarMiPuesto = () => {
             </View>
 
             <View style={styles.estado}>
-              <Text style={styles.estadoTexto}>CONFIGURACIÓN</Text>
+              <Text style={styles.estadoTexto}>
+                CONFIGURACIÓN
+              </Text>
             </View>
           </View>
 
@@ -293,7 +383,7 @@ export const PantallaCargarMiPuesto = () => {
               </View>
             </View>
 
-            {referentes.map((nombre, indice) => (
+            {referentes.map((referente, indice) => (
               <View key={indice} style={styles.filaReferente}>
                 <View style={styles.numeroReferente}>
                   <Text style={styles.numeroReferenteTexto}>
@@ -301,15 +391,32 @@ export const PantallaCargarMiPuesto = () => {
                   </Text>
                 </View>
 
-                <TextInput
-                  style={styles.inputReferente}
-                  value={nombre}
-                  onChangeText={(texto) =>
-                    actualizarReferente(texto, indice)
-                  }
-                  placeholder="Nombre y apellido"
-                  placeholderTextColor="#969D8C"
-                />
+                <View style={{ flex: 1 }}>
+                  <TextInput
+                    style={styles.inputReferente}
+                    value={referente.nombre}
+                    onChangeText={(texto) =>
+                      actualizarReferente('nombre', texto, indice)
+                    }
+                    placeholder="Nombre y apellido"
+                    placeholderTextColor="#969D8C"
+                  />
+
+                  <TextInput
+                    style={[
+                      styles.inputReferente,
+                      { marginTop: 7 },
+                    ]}
+                    value={referente.imagen_url}
+                    onChangeText={(texto) =>
+                      actualizarReferente('imagen_url', texto, indice)
+                    }
+                    placeholder="URL de imagen"
+                    placeholderTextColor="#969D8C"
+                    autoCapitalize="none"
+                    keyboardType="url"
+                  />
+                </View>
 
                 {referentes.length > 1 && (
                   <TouchableOpacity
@@ -767,7 +874,6 @@ const styles = StyleSheet.create({
   },
 
   inputReferente: {
-    flex: 1,
     backgroundColor: '#FFFFFF',
     borderWidth: 1,
     borderColor: '#DDE3D4',
