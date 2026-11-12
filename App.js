@@ -8,7 +8,7 @@ import { AppProvider } from './provider/AppProvider';
 import { Ionicons } from '@expo/vector-icons';
 
 import { PantallaHome } from './components/pantallaHome';
-import { PantallaMiPlaza } from './components/pantallaMiPlaza.js';
+import { PantallaUserVerMiPlaza } from './components/pantallaUserVerMiPlaza.js';
 import { PantallaConfiguracion } from './components/pantallaConfiguracion';
 import { PantallaLogin } from './components/pantallaLogin';
 
@@ -29,6 +29,11 @@ import { PantallaCargarNuevaFeria } from './components/pantallaCargarNuevaFeria.
 import { PantallaRegistrarPuestos } from './components/pantallaRegistrarPuestos.js';
 
 import { PantallaAdminSolicitudesPuestero } from './components/pantallaAdminSolicitudesPuestero.js';
+
+import { PantallaUserVerPuesto } from './components/pantallaUserVerPuesto.js';
+
+
+
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -51,6 +56,12 @@ const StackHome = () => {
         component={PantallaHome}
         options={{ title: 'Inicio' }}
       />
+
+        <Stack.Screen
+        name="PantallaUserVerPuesto"
+        component={PantallaUserVerPuesto}
+        options={{ title: 'Puesto' }}
+      />
     </Stack.Navigator>
   );
 };
@@ -70,8 +81,15 @@ const StackMisPuestos = () => {
     >
       <Stack.Screen
         name="miPlaza"
-        component={PantallaMiPlaza}
+        component={PantallaUserVerMiPlaza}
         options={{ title: 'Mi Plaza' }}
+      />
+
+
+      <Stack.Screen
+        name="PantallaUserVerPuesto"
+        component={PantallaUserVerPuesto}
+        options={{ title: 'Puesto' }}
       />
     </Stack.Navigator>
   );

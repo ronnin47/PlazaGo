@@ -526,7 +526,7 @@ return (
 
 
 
-     {/* PRODUCTOS DESTACADOS */}
+{/* PRODUCTOS DESTACADOS */}
 <View style={styles.seccionProductos}>
   <View style={styles.encabezadoSeccion}>
     <View style={styles.indicadorSeccion} />
@@ -542,9 +542,17 @@ return (
     contentContainerStyle={styles.listaProductos}
   >
     {productosDestacados.map((producto) => (
-      <View
+      <TouchableOpacity
         key={producto.id_producto}
+        activeOpacity={0.85}
         style={styles.tarjetaProducto}
+        onPress={() =>
+          navigation.navigate('PantallaUserVerPuesto', {
+            id_puesto: producto.id_puesto,
+            id_producto: producto.id_producto,
+            origen: 'producto'
+          })
+        }
       >
         <Image
           source={{ uri: producto.imagen_url }}
@@ -580,10 +588,12 @@ return (
             {producto.nombre_puesto}
           </Text>
         </View>
-      </View>
+      </TouchableOpacity>
     ))}
   </ScrollView>
 </View>
+
+
 {/* PUESTOS DE LA PRÓXIMA FERIA */}
 <View style={styles.seccionPuestos}>
   <View style={styles.encabezadoSeccion}>
@@ -609,6 +619,12 @@ return (
   <CardPuestero
     key={puesto.id_inscripcion}
     puesto={puesto}
+    onPress={() =>
+      navigation.navigate('PantallaUserVerPuesto', {
+        id_puesto: puesto.id_puesto,
+        origen: 'puesteros'
+      })
+    }
   />
 ))}
   </ScrollView>

@@ -5,9 +5,10 @@ import {
   Text,
   Image,
   StyleSheet,
+  TouchableOpacity,
 } from 'react-native';
 
-export const CardPuestero = ({ puesto }) => {
+export const CardPuestero = ({ puesto, onPress }) => {
 
   const referentes = (puesto.referentes || [])
     .slice(0, 3)
@@ -27,7 +28,12 @@ export const CardPuestero = ({ puesto }) => {
     .toUpperCase();
 
   return (
-    <View style={styles.tarjeta}>
+    <TouchableOpacity
+      style={styles.tarjeta}
+      activeOpacity={0.85}
+      onPress={onPress}
+      disabled={!onPress}
+    >
 
       {/* IMAGEN DEL PUESTO */}
       <View style={styles.contenedorImagen}>
@@ -148,7 +154,7 @@ export const CardPuestero = ({ puesto }) => {
 
       <View style={styles.separador} />
 
-    </View>
+    </TouchableOpacity>
   );
 };
 

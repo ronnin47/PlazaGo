@@ -1726,6 +1726,258 @@ app.post('/insertarPuesto', async (req, res) => {
 });
 
 
+
+
+
+
+
+
+
+
+
+app.get("/obtenerDetallePuesto/:id_puesto", async (req, res) => {
+
+    const { id_puesto } = req.params;
+
+    try {
+
+        // 1. Obtener información del puesto
+        const resultadoPuesto = await pool.query(
+            `SELECT
+                id_puesto,
+                id_usuario,
+                nombre,
+                descripcion,
+                categoria,
+                imagen_url,
+                imagen_marca,
+                telefono,
+                instagram,
+                facebook,
+                tiktok,
+                otro_enlace
+             FROM puestos
+             WHERE id_puesto = $1
+               AND estado = TRUE`,
+            [id_puesto]
+        );
+
+        if (resultadoPuesto.rows.length === 0) {
+            return res.status(404).json({
+                mensaje: "No se encontró el puesto."
+            });
+        }
+
+        const puesto = resultadoPuesto.rows[0];
+
+        // 2. Obtener referentes del puesto
+        const resultadoReferentes = await pool.query(
+            `SELECT
+                id_referente,
+                id_puesto,
+                nombre,
+                imagen_url
+             FROM referentes_puesto
+             WHERE id_puesto = $1
+             ORDER BY id_referente`,
+            [id_puesto]
+        );
+
+        // 3. Obtener productos del puesto
+        const resultadoProductos = await pool.query(
+            `SELECT
+                id_producto,
+                id_puesto,
+                nombre,
+                descripcion,
+                precio,
+                imagen_url,
+                estado,
+                destacado
+             FROM productos
+             WHERE id_puesto = $1
+               AND estado = TRUE
+             ORDER BY destacado DESC, id_producto DESC`,
+            [id_puesto]
+        );
+
+        // 4. Responder
+        return res.status(200).json({
+            puesto: {
+                ...puesto,
+                referentes: resultadoReferentes.rows
+            },
+            productos: resultadoProductos.rows
+        });
+
+    } catch (error) {
+
+        console.error(
+            "Error al obtener detalle del puesto:",
+            error
+        );
+
+        return res.status(500).json({
+            mensaje: "Error al obtener el detalle del puesto."
+        });
+    }
+});
+
+app.get("/obtenerPuestosActivos", async (req, res) => {
+
+    console.log("Pego en el endpoint obtenerPuestosActivos");
+
+    try {
+
+        const resultado = await pool.query(
+            `SELECT
+                p.id_puesto,
+                p.nombre,
+                p.descripcion,
+                p.categoria,
+                p.imagen_url,
+                p.imagen_marca,
+                p.estado,
+
+                COALESCE(
+                    JSON_AGG(
+                        JSON_BUILD_OBJECT(
+                            'id_referente', r.id_referente,
+                            'nombre', r.nombre,
+                            'imagen_url', r.imagen_url
+                        )
+                        ORDER BY r.id_referente
+                    ) FILTER (
+                        WHERE r.id_referente IS NOT NULL
+                    ),
+                    '[]'::json
+                ) AS referentes
+
+            FROM puestos p
+
+            LEFT JOIN referentes_puesto r
+                ON r.id_puesto = p.id_puesto
+
+            WHERE p.estado = TRUE
+
+            GROUP BY
+                p.id_puesto,
+                p.nombre,
+                p.descripcion,
+                p.categoria,
+                p.imagen_url,
+                p.imagen_marca,
+                p.estado
+
+            ORDER BY p.nombre ASC`
+        );
+
+        return res.status(200).json(resultado.rows);
+
+    } catch (error) {
+
+        console.error(
+            "Error al obtener puestos activos:",
+            error
+        );
+
+        return res.status(500).json({
+            mensaje: "Error al obtener los puestos activos."
+        });
+    }
+});
+
+
+
+
+app.get('/obtenerFavoritos/:id_usuario', async (req, res) => {
+    try {
+        const { id_usuario } = req.params;
+
+        const resultado = await pool.query(`
+            SELECT p.*
+            FROM favoritos_puestos f
+            INNER JOIN puestos p
+                ON f.id_puesto = p.id_puesto
+            WHERE f.id_usuario = $1
+              AND p.estado = true
+            ORDER BY f.fecha_agregado DESC
+        `, [id_usuario]);
+
+        res.json(resultado.rows);
+
+    } catch (error) {
+        console.error('Error al obtener favoritos:', error);
+        res.status(500).json({
+            mensaje: 'Error al obtener los favoritos'
+        });
+    }
+});
+
+
+app.post('/agregarFavorito', async (req, res) => {
+    try {
+        const { id_usuario, id_puesto } = req.body;
+
+        if (!id_usuario || !id_puesto) {
+            return res.status(400).json({
+                mensaje: 'Faltan datos obligatorios'
+            });
+        }
+
+        await pool.query(`
+            INSERT INTO favoritos_puestos (
+                id_usuario,
+                id_puesto
+            )
+            VALUES ($1, $2)
+            ON CONFLICT (id_usuario, id_puesto) DO NOTHING
+        `, [id_usuario, id_puesto]);
+
+        res.json({
+            mensaje: 'Puesto agregado a favoritos'
+        });
+
+    } catch (error) {
+        console.error('Error al agregar favorito:', error);
+        res.status(500).json({
+            mensaje: 'Error al agregar favorito'
+        });
+    }
+});
+
+
+app.delete('/eliminarFavorito', async (req, res) => {
+    try {
+        const { id_usuario, id_puesto } = req.body;
+
+        if (!id_usuario || !id_puesto) {
+            return res.status(400).json({
+                mensaje: 'Faltan datos obligatorios'
+            });
+        }
+
+        const resultado = await pool.query(`
+            DELETE FROM favoritos_puestos
+            WHERE id_usuario = $1
+              AND id_puesto = $2
+            RETURNING *
+        `, [id_usuario, id_puesto]);
+
+        res.json({
+            mensaje: resultado.rowCount > 0
+                ? 'Puesto eliminado de favoritos'
+                : 'El puesto no estaba en favoritos'
+        });
+
+    } catch (error) {
+        console.error('Error al eliminar favorito:', error);
+        res.status(500).json({
+            mensaje: 'Error al eliminar favorito'
+        });
+    }
+});
+
 const comprobarConexion = async () => {
 
     try {
