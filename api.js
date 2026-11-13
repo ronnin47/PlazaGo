@@ -1297,7 +1297,11 @@ app.get("/obtenerResumenAdmin", async (req, res) => {
 
                 (SELECT COUNT(*)
                  FROM inscripciones_ferias
-                 WHERE estado = 'pendiente') AS solicitudes_pendientes
+                 WHERE estado = 'pendiente') AS solicitudes_pendientes,
+
+                (SELECT COUNT(*)
+                 FROM solicitudes_puestero
+                 WHERE estado_solicitud = 'pendiente') AS solicitudes_puestero_pendientes
         `);
 
         return res.status(200).json(resultado.rows[0]);
