@@ -245,9 +245,17 @@ app.get("/obtenerTodasLasFerias", async (req, res) => {
 
     try {
         const resultado = await pool.query(
-            `SELECT *
-             FROM ferias
-             ORDER BY fecha_inicio ASC`
+            `SELECT
+                f.*,
+                COUNT(i.id_puesto) AS cantidad_puestos
+             FROM ferias f
+
+             LEFT JOIN inscripciones_ferias i
+                ON i.id_feria = f.id_feria
+
+             GROUP BY f.id_feria
+
+             ORDER BY f.fecha_inicio ASC`
         );
 
         return res.status(200).json(resultado.rows);
@@ -1335,10 +1343,13 @@ app.get("/obtenerProximasFerias", async (req, res) => {
                 id_administrador
             FROM ferias
             WHERE estado = 'publicada'
-              AND fecha_inicio > NOW()
+              AND fecha_fin >= NOW()
             ORDER BY fecha_inicio ASC
             LIMIT 5
         `);
+
+        console.log("Ferias encontradas:", resultado.rows.length);
+        console.log(resultado.rows);
 
         return res.status(200).json(resultado.rows);
 
