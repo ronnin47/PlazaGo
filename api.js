@@ -90,8 +90,139 @@ app.post("/login", async (req, res) => {
 });
 
 
+app.post('/registrar', async (req, res) => {
+    const { nombre, apellido, email, password } = req.body;
 
-//home
+    if (!nombre || !apellido || !email || !password) {
+        return res.status(400).json({
+            mensaje: 'Todos los campos son obligatorios'
+        });
+    }
+
+    try {
+        // Verificar si el correo ya existe
+        const usuarioExistente = await pool.query(
+            'SELECT id_usuario FROM usuarios WHERE email = $1',
+            [email]
+        );
+
+        if (usuarioExistente.rows.length > 0) {
+            return res.status(409).json({
+                mensaje: 'El correo electrónico ya está registrado'
+            });
+        }
+
+        // Registrar usuario
+        const resultado = await pool.query(
+            `INSERT INTO usuarios
+            (nombre, apellido, email, password, rol, estado)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING id_usuario`,
+            [nombre, apellido, email, password, 'usuario', true]
+        );
+
+        res.status(201).json({
+            mensaje: 'Cuenta creada correctamente',
+            id_usuario: resultado.rows[0].id_usuario
+        });
+
+    } catch (error) {
+        console.error('Error al registrar usuario:', error);
+
+        res.status(500).json({
+            mensaje: 'Error al registrar la cuenta'
+        });
+    }
+});
+
+
+// REGISTRO DE UN USUARIO PARA SER PUESTERO DESDE CREAR CUENTA
+app.post('/solicitarSerPuestero', async (req, res) => {
+
+    const {
+        id_usuario,
+        nombre_emprendimiento,
+        telefono,
+        descripcion
+    } = req.body;
+
+    console.log("Pego en el endpoint solicitar ser puestero");
+    console.log("telefono:", telefono);
+
+    if (!id_usuario || !nombre_emprendimiento || !telefono || !descripcion) {
+        return res.status(400).json({
+            mensaje: 'Todos los campos son obligatorios'
+        });
+    }
+
+    try {
+
+        // Verificar que el usuario exista
+        const usuario = await pool.query(
+            `SELECT id_usuario, rol
+             FROM usuarios
+             WHERE id_usuario = $1`,
+            [id_usuario]
+        );
+
+        if (usuario.rows.length === 0) {
+            return res.status(404).json({
+                mensaje: 'Usuario no encontrado'
+            });
+        }
+
+        if (usuario.rows[0].rol !== 'usuario') {
+            return res.status(400).json({
+                mensaje: 'La cuenta no puede solicitar ser puestero'
+            });
+        }
+
+        // Verificar que no tenga una solicitud pendiente o aprobada
+        const solicitudExistente = await pool.query(
+            `SELECT id_solicitud
+             FROM solicitudes_puestero
+             WHERE id_usuario = $1
+             AND estado_solicitud IN ('pendiente', 'aprobado')`,
+            [id_usuario]
+        );
+
+        if (solicitudExistente.rows.length > 0) {
+            return res.status(409).json({
+                mensaje: 'Ya existe una solicitud pendiente o aprobada'
+            });
+        }
+
+        // Registrar solicitud de puestero
+        const resultado = await pool.query(
+            `INSERT INTO solicitudes_puestero
+             (id_usuario, nombre_emprendimiento, telefono, descripcion)
+             VALUES ($1, $2, $3, $4)
+             RETURNING *`,
+            [
+                id_usuario,
+                nombre_emprendimiento,
+                telefono,
+                descripcion
+            ]
+        );
+
+        return res.status(201).json({
+            mensaje: 'Solicitud enviada correctamente',
+            solicitud: resultado.rows[0]
+        });
+
+    } catch (error) {
+
+        console.error('Error al solicitar ser puestero:', error);
+
+        return res.status(500).json({
+            mensaje: 'Error interno del servidor'
+        });
+    }
+});
+
+
+//Home
 app.get("/consumirProductosProximaFeria", async (req, res) => {
 
     try {
@@ -142,8 +273,105 @@ app.get("/consumirProductosProximaFeria", async (req, res) => {
     }
 });
 
+
+
+
 //-------------------ADMISTRADOR-----------------------------------------
 //ADMINISTRADOR - FERIAS
+
+//se trata de todas las ferias, para que el administrador pueda verlas y administrarlas
+app.get("/obtenerTodasLasFerias", async (req, res) => {
+
+    console.log("Pego en el endpoint obtener todas las ferias");
+
+    try {
+        const resultado = await pool.query(
+            `SELECT
+                f.*,
+                COUNT(i.id_puesto) AS cantidad_puestos
+             FROM ferias f
+
+             LEFT JOIN inscripciones_ferias i
+                ON i.id_feria = f.id_feria
+
+             GROUP BY f.id_feria
+
+             ORDER BY f.fecha_inicio ASC`
+        );
+
+        return res.status(200).json(resultado.rows);
+
+    } catch (error) {
+        console.error("Error al obtener todas las ferias:", error);
+
+        return res.status(500).json({
+            message: "Error al obtener todas las ferias"
+        });
+    }
+});
+
+//se trata de las proximas ferias, las que no han finalizado, para que los puesteros puedan inscribirse
+app.get("/obtenerFerias", async (req, res) => {
+
+
+   console.log("Pego en el endpoint obtene ferias")
+   
+    try {
+        const resultado = await pool.query(
+            `SELECT *
+             FROM ferias
+             WHERE fecha_fin >= CURRENT_DATE
+             ORDER BY fecha_inicio ASC`
+        );
+
+        if (resultado.rows.length === 0) {
+            return res.status(404).json({
+                message: "No hay ferias próximas disponibles"
+            });
+        }
+
+       res.status(200).json(resultado.rows);
+
+    } catch (error) {
+        console.error("Error al obtener proximas feria:", error);
+
+        res.status(500).json({
+            message: "Error al obtener próximas feria"
+        });
+    }
+});
+
+//OBTINE UNICAMNETE LA PROXIMA FERIA, LA QUE NO HA FINALIZADO Y TIENE LA FECHA DE INICIO MAS CERCANA
+app.get("/proximaFeria", async (req, res) => {
+   
+    try {
+        const resultado = await pool.query(
+            `SELECT *
+             FROM ferias
+             WHERE fecha_fin >= CURRENT_DATE
+             ORDER BY fecha_inicio ASC
+             LIMIT 1`
+        );
+
+        if (resultado.rows.length === 0) {
+            return res.status(404).json({
+                message: "No hay ferias próximas disponibles"
+            });
+        }
+
+        res.status(200).json({
+            feria: resultado.rows[0]
+        });
+
+    } catch (error) {
+        console.error("Error al obtener la próxima feria:", error);
+
+        res.status(500).json({
+            message: "Error al obtener la próxima feria"
+        });
+    }
+});
+
 app.post("/insertarFeria", async (req, res) => {
 
  
@@ -207,68 +435,7 @@ app.post("/insertarFeria", async (req, res) => {
 
 });
 
-//se trata de las proximas ferias, las que no han finalizado, para que los puesteros puedan inscribirse
-app.get("/obtenerFerias", async (req, res) => {
-
-
-   console.log("Pego en el endpoint obtene ferias")
-   
-    try {
-        const resultado = await pool.query(
-            `SELECT *
-             FROM ferias
-             WHERE fecha_fin >= CURRENT_DATE
-             ORDER BY fecha_inicio ASC`
-        );
-
-        if (resultado.rows.length === 0) {
-            return res.status(404).json({
-                message: "No hay ferias próximas disponibles"
-            });
-        }
-
-       res.status(200).json(resultado.rows);
-
-    } catch (error) {
-        console.error("Error al obtener proximas feria:", error);
-
-        res.status(500).json({
-            message: "Error al obtener próximas feria"
-        });
-    }
-});
-
-//se trata de todas las ferias, para que el administrador pueda verlas y administrarlas
-app.get("/obtenerTodasLasFerias", async (req, res) => {
-
-    console.log("Pego en el endpoint obtener todas las ferias");
-
-    try {
-        const resultado = await pool.query(
-            `SELECT
-                f.*,
-                COUNT(i.id_puesto) AS cantidad_puestos
-             FROM ferias f
-
-             LEFT JOIN inscripciones_ferias i
-                ON i.id_feria = f.id_feria
-
-             GROUP BY f.id_feria
-
-             ORDER BY f.fecha_inicio ASC`
-        );
-
-        return res.status(200).json(resultado.rows);
-
-    } catch (error) {
-        console.error("Error al obtener todas las ferias:", error);
-
-        return res.status(500).json({
-            message: "Error al obtener todas las ferias"
-        });
-    }
-});
-
+//ADMINISTRADOR - SOLICITUDES DE INSCRIPCION
 app.get("/obtenerSolicitudesFeria", async (req, res) => {
 
     const { id_feria } = req.query;
@@ -397,6 +564,7 @@ app.put("/actualizarEstadoInscripcion", async (req, res) => {
     }
 });
 
+//UPDATE FERIA
 app.put("/actualizarFeria/:id", async (req, res) => {
 
     const { id } = req.params;
@@ -411,7 +579,7 @@ app.put("/actualizarFeria/:id", async (req, res) => {
         estado
     } = req.body;
 
-    console.log("Pego en actualizar feria. ID:", id);
+    //console.log("Pego en actualizar feria. ID:", id);
 
     if (
         !id ||
@@ -501,36 +669,6 @@ app.put("/eliminarFeria/:id", async (req, res) => {
 
         res.status(500).json({
             message: "Error al dar de baja la feria."
-        });
-    }
-});
-
-app.get("/proximaFeria", async (req, res) => {
-   
-    try {
-        const resultado = await pool.query(
-            `SELECT *
-             FROM ferias
-             WHERE fecha_fin >= CURRENT_DATE
-             ORDER BY fecha_inicio ASC
-             LIMIT 1`
-        );
-
-        if (resultado.rows.length === 0) {
-            return res.status(404).json({
-                message: "No hay ferias próximas disponibles"
-            });
-        }
-
-        res.status(200).json({
-            feria: resultado.rows[0]
-        });
-
-    } catch (error) {
-        console.error("Error al obtener la próxima feria:", error);
-
-        res.status(500).json({
-            message: "Error al obtener la próxima feria"
         });
     }
 });
@@ -756,8 +894,6 @@ app.put("/cambiarEstadoPuesto/:id", async (req, res) => {
 
 //----------------------PUESTERO----------------------
 
-
-
 app.get("/MiPuesto", async (req, res) => {
     console.log("pego en la endpoint Mi puesto");
 
@@ -803,14 +939,6 @@ app.get("/MiPuesto", async (req, res) => {
         });
     }
 });
-
-
-
-
-
-
-
-
 
 
 app.put("/actualizarPuesto/:id_puesto", async (req, res) => {
@@ -992,19 +1120,6 @@ app.put("/actualizarPuesto/:id_puesto", async (req, res) => {
 });
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 app.get("/obtenerProductosPuesto", async (req, res) => {
     const { id_puesto } = req.query;
 
@@ -1126,11 +1241,6 @@ app.post("/insertarProducto", async (req, res) => {
 
 
 
-
-
-
-
-
 //FERIAS PARA INSCRIBIRSE E INSCRIPTO 
 app.get("/obtenerFeriasDisponibles", async (req, res) => {
 
@@ -1195,7 +1305,6 @@ app.get("/obtenerFeriasDisponibles", async (req, res) => {
         });
     }
 });
-
 
 
 app.post("/solicitarInscripcion", async (req, res) => {
@@ -1282,9 +1391,6 @@ app.post("/solicitarInscripcion", async (req, res) => {
 });
 
 
-
-
-
 app.get("/obtenerResumenAdmin", async (req, res) => {
 
     console.log("Pego en el endpoint obtenerResumenAdmin");
@@ -1332,19 +1438,29 @@ app.get("/obtenerProximasFerias", async (req, res) => {
 
         const resultado = await pool.query(`
             SELECT
-                id_feria,
-                nombre,
-                descripcion,
-                fecha_inicio,
-                fecha_fin,
-                ubicacion,
-                imagen_url,
-                estado,
-                id_administrador
-            FROM ferias
-            WHERE estado = 'publicada'
-              AND fecha_fin >= NOW()
-            ORDER BY fecha_inicio ASC
+                f.id_feria,
+                f.nombre,
+                f.descripcion,
+                f.fecha_inicio,
+                f.fecha_fin,
+                f.ubicacion,
+                f.imagen_url,
+                f.estado,
+                f.id_administrador,
+
+                (
+                    SELECT COUNT(*)
+                    FROM inscripciones_ferias i
+                    WHERE i.id_feria = f.id_feria
+                      AND i.estado = 'aprobado'
+                ) AS cantidad_puestos
+
+            FROM ferias f
+
+            WHERE f.estado = 'publicada'
+              AND f.fecha_fin >= NOW()
+
+            ORDER BY f.fecha_inicio ASC
             LIMIT 5
         `);
 
@@ -1362,8 +1478,6 @@ app.get("/obtenerProximasFerias", async (req, res) => {
         });
     }
 });
-
-
 
 
 //puestos admin wpf
@@ -1434,136 +1548,7 @@ app.get("/obtenerTodosLosPuestos", async (req, res) => {
 //----------------------USUARIO----------------------
 
 // Registro de usuario
-app.post('/registrar', async (req, res) => {
-    const { nombre, apellido, email, password } = req.body;
 
-    if (!nombre || !apellido || !email || !password) {
-        return res.status(400).json({
-            mensaje: 'Todos los campos son obligatorios'
-        });
-    }
-
-    try {
-        // Verificar si el correo ya existe
-        const usuarioExistente = await pool.query(
-            'SELECT id_usuario FROM usuarios WHERE email = $1',
-            [email]
-        );
-
-        if (usuarioExistente.rows.length > 0) {
-            return res.status(409).json({
-                mensaje: 'El correo electrónico ya está registrado'
-            });
-        }
-
-        // Registrar usuario
-        const resultado = await pool.query(
-            `INSERT INTO usuarios
-            (nombre, apellido, email, password, rol, estado)
-            VALUES ($1, $2, $3, $4, $5, $6)
-            RETURNING id_usuario`,
-            [nombre, apellido, email, password, 'usuario', true]
-        );
-
-        res.status(201).json({
-            mensaje: 'Cuenta creada correctamente',
-            id_usuario: resultado.rows[0].id_usuario
-        });
-
-    } catch (error) {
-        console.error('Error al registrar usuario:', error);
-
-        res.status(500).json({
-            mensaje: 'Error al registrar la cuenta'
-        });
-    }
-});
-
-
-// REGISTRO DE UN USUARIO PARA SER PUESTERO DESDE CREAR CUENTA
-app.post('/solicitarSerPuestero', async (req, res) => {
-
-    const {
-        id_usuario,
-        nombre_emprendimiento,
-        telefono,
-        descripcion
-    } = req.body;
-
-    console.log("Pego en el endpoint solicitar ser puestero");
-    console.log("telefono:", telefono);
-
-    if (!id_usuario || !nombre_emprendimiento || !telefono || !descripcion) {
-        return res.status(400).json({
-            mensaje: 'Todos los campos son obligatorios'
-        });
-    }
-
-    try {
-
-        // Verificar que el usuario exista
-        const usuario = await pool.query(
-            `SELECT id_usuario, rol
-             FROM usuarios
-             WHERE id_usuario = $1`,
-            [id_usuario]
-        );
-
-        if (usuario.rows.length === 0) {
-            return res.status(404).json({
-                mensaje: 'Usuario no encontrado'
-            });
-        }
-
-        if (usuario.rows[0].rol !== 'usuario') {
-            return res.status(400).json({
-                mensaje: 'La cuenta no puede solicitar ser puestero'
-            });
-        }
-
-        // Verificar que no tenga una solicitud pendiente o aprobada
-        const solicitudExistente = await pool.query(
-            `SELECT id_solicitud
-             FROM solicitudes_puestero
-             WHERE id_usuario = $1
-             AND estado_solicitud IN ('pendiente', 'aprobado')`,
-            [id_usuario]
-        );
-
-        if (solicitudExistente.rows.length > 0) {
-            return res.status(409).json({
-                mensaje: 'Ya existe una solicitud pendiente o aprobada'
-            });
-        }
-
-        // Registrar solicitud de puestero
-        const resultado = await pool.query(
-            `INSERT INTO solicitudes_puestero
-             (id_usuario, nombre_emprendimiento, telefono, descripcion)
-             VALUES ($1, $2, $3, $4)
-             RETURNING *`,
-            [
-                id_usuario,
-                nombre_emprendimiento,
-                telefono,
-                descripcion
-            ]
-        );
-
-        return res.status(201).json({
-            mensaje: 'Solicitud enviada correctamente',
-            solicitud: resultado.rows[0]
-        });
-
-    } catch (error) {
-
-        console.error('Error al solicitar ser puestero:', error);
-
-        return res.status(500).json({
-            mensaje: 'Error interno del servidor'
-        });
-    }
-});
 
 
 
@@ -1687,8 +1672,6 @@ app.put('/actualizarEstadoSolicitudPuestero', async (req, res) => {
         conexion.release();
     }
 });
-
-
 
 
 app.post('/insertarPuesto', async (req, res) => {
@@ -1823,15 +1806,6 @@ app.post('/insertarPuesto', async (req, res) => {
         client.release();
     }
 });
-
-
-
-
-
-
-
-
-
 
 
 
@@ -1989,8 +1963,6 @@ app.get("/obtenerPuestosActivos", async (req, res) => {
 });
 
 
-
-
 app.get('/obtenerFavoritos/:id_usuario', async (req, res) => {
     try {
         const { id_usuario } = req.params;
@@ -2078,6 +2050,146 @@ app.delete('/eliminarFavorito', async (req, res) => {
         });
     }
 });
+
+
+
+
+
+
+
+app.get("/obtenerPuestosConProductosFeria", async (req, res) => {
+
+    const { id_feria } = req.query;
+
+    if (!id_feria) {
+        return res.status(400).json({
+            mensaje: "Falta el ID de la feria."
+        });
+    }
+
+    try {
+
+        const resultado = await pool.query(
+            `SELECT
+                i.id_inscripcion,
+
+                p.id_puesto,
+                p.nombre AS nombre_puesto,
+                p.descripcion AS descripcion_puesto,
+                p.historia,
+                p.categoria,
+                p.imagen_url,
+                p.imagen_marca,
+
+                u.id_usuario,
+                u.nombre AS nombre_puestero,
+                u.apellido AS apellido_puestero,
+
+                COALESCE(
+                    (
+                        SELECT JSON_AGG(
+                            JSON_BUILD_OBJECT(
+                                'id_referente', r.id_referente,
+                                'nombre', r.nombre,
+                                'imagen_url', r.imagen_url
+                            )
+                            ORDER BY r.id_referente
+                        )
+                        FROM referentes_puesto r
+                        WHERE r.id_puesto = p.id_puesto
+                    ),
+                    '[]'::json
+                ) AS referentes,
+
+                COALESCE(
+                    (
+                        SELECT JSON_AGG(
+                            JSON_BUILD_OBJECT(
+                                'id_producto', pr.id_producto,
+                                'id_puesto', pr.id_puesto,
+                                'nombre', pr.nombre,
+                                'descripcion', pr.descripcion,
+                                'precio', pr.precio,
+                                'imagen_url', pr.imagen_url,
+                                'estado', pr.estado,
+                                'destacado', pr.destacado
+                            )
+                            ORDER BY pr.destacado DESC, pr.id_producto DESC
+                        )
+                        FROM productos pr
+                        WHERE pr.id_puesto = p.id_puesto
+                          AND pr.estado = TRUE
+                    ),
+                    '[]'::json
+                ) AS productos
+
+            FROM inscripciones_ferias i
+
+            INNER JOIN puestos p
+                ON p.id_puesto = i.id_puesto
+
+            INNER JOIN usuarios u
+                ON u.id_usuario = p.id_usuario
+
+            WHERE i.id_feria = $1
+              AND i.estado = 'aprobado'
+              AND p.estado = TRUE
+
+            ORDER BY i.fecha_respuesta DESC NULLS LAST`,
+
+            [id_feria]
+        );
+
+
+
+        resultado.rows.forEach((puesto, index) => {
+
+    console.log("\n======================================");
+    console.log(`PUESTO ${index + 1}: ${puesto.nombre_puesto}`);
+    console.log("======================================");
+
+    console.log(`ID puesto: ${puesto.id_puesto}`);
+    console.log(`Descripción: ${puesto.descripcion_puesto}`);
+
+    const productos = puesto.productos || [];
+
+    console.log(`CANTIDAD DE PRODUCTOS: ${productos.length}`);
+
+    productos.forEach((producto, i) => {
+
+        console.log(`\n--- PRODUCTO ${i + 1} ---`);
+
+        console.log(`ID: ${producto.id_producto}`);
+        console.log(`ID puesto: ${producto.id_puesto}`);
+        console.log(`Nombre: ${producto.nombre}`);
+        console.log(`Descripción: ${producto.descripcion}`);
+        console.log(`Precio: ${producto.precio}`);
+        console.log(`Imagen: ${producto.imagen_url}`);
+        console.log(`Estado: ${producto.estado}`);
+        console.log(`Destacado: ${producto.destacado}`);
+
+    });
+
+    console.log("\n======================================\n");
+
+});
+
+        return res.status(200).json(resultado.rows);
+
+    } catch (error) {
+
+        console.error(
+            "Error al obtener puestos y productos de la feria:",
+            error
+        );
+
+        return res.status(500).json({
+            mensaje: "Error al obtener los puestos y productos de la feria."
+        });
+    }
+});
+
+
 
 const comprobarConexion = async () => {
 
