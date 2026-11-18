@@ -13,17 +13,32 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import axios from 'axios';
-import { AppContext } from '../provider/AppProvider';
+import { AppContext } from '../../provider/AppProvider';
 import { useNavigation } from '@react-navigation/native';
-import API_URL from '../config/apiConfig';
+import API_URL from '../../../config/apiConfig';
 
 import { Ionicons } from '@expo/vector-icons';
 
 export const PantallaAdministrador = () => {
+
+
   const { usuario, cerrarSesion } = useContext(AppContext);
+  
+  
+  
   const navigation = useNavigation();
 
+
+
+
+
+  
   const [ferias, setFerias] = useState([]);
+  
+  
+  
+  
+  
   const [cargando, setCargando] = useState(true);
 
   const fondoPantallaConfiguracion =

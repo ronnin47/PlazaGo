@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
-import API_URL from '../config/apiConfig';
+import API_URL from '../../config/apiConfig';
 import { AppContext } from '../provider/AppProvider';
 
 export const GaleriaFeriasProximas = () => {

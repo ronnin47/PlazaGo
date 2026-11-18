@@ -16,12 +16,17 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRoute, useNavigation } from '@react-navigation/native';
 import axios from 'axios';
-import API_URL from '../config/apiConfig';
-import { AppContext } from '../provider/AppProvider';
+import API_URL from '../../../config/apiConfig';
+import { AppContext } from '../../provider/AppProvider';
 
 const FONDO =
   'https://res.cloudinary.com/dzul1hatw/image/upload/v1792521295/Fondo_org%C3%A1nico_verde_y_dorado_komwcn.png';
 
+
+
+
+
+//esta es la pantalla de como el usuario ve el puesto
 export const PantallaUserVerPuesto = () => {
   const route = useRoute();
   const navigation = useNavigation();

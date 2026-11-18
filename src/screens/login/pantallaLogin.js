@@ -12,12 +12,12 @@ import {
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useState, useContext } from 'react';
-import { AppContext } from '../provider/AppProvider';
+import { AppContext } from '../../provider/AppProvider';
 
 
 
 
-import API_URL from '../config/apiConfig';
+import API_URL from '../../../config/apiConfig';
 
 export const PantallaLogin = ({ navigation }) => {
   const { setUsuario, setLogueado } = useContext(AppContext);
@@ -72,7 +72,7 @@ export const PantallaLogin = ({ navigation }) => {
 
           <View style={styles.logoContenedor}>
             <Image
-              source={require('../assets/iconPlazaGO.png')}
+              source={require('../../../assets/iconPlazaGO.png')}
               style={styles.logo}
               resizeMode="contain"
             />

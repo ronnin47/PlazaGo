@@ -57,6 +57,7 @@ app.post("/login", async (req, res) => {
         `SELECT id_usuario, nombre, apellido, email, rol, estado
          FROM usuarios
          WHERE email = $1 AND password = $2`,
+         
         [email, password]
     );
 

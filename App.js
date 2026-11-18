@@ -4,39 +4,40 @@ import * as React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
-import { AppProvider } from './provider/AppProvider';
+
 import { Ionicons } from '@expo/vector-icons';
 
-import { PantallaHome } from './components/pantallaHome';
-import { PantallaUserVerMiPlaza } from './components/pantallaUserVerMiPlaza.js';
-import { PantallaConfiguracion } from './components/pantallaConfiguracion';
-import { PantallaLogin } from './components/pantallaLogin';
+import { PantallaHome } from './src/screens/home/pantallaHome.js';
+import { PantallaUserVerMiPlaza } from './src/screens/usuario/pantallaUserVerMiPlaza.js';
+import { PantallaConfiguracion } from './src/screens/configuracion/pantallaConfiguracion.js';
+import { PantallaLogin } from './src/screens/login/pantallaLogin.js';
 
 
 
-import { PantallaAdministrador } from './components/pantallaAdministrador';
+import { PantallaAdministrador } from './src/screens/administrador/pantallaAdministrador.js';
 
-import { PantallaRegistro } from './components/pantallaRegistro';
-
-
-import { PantallaRegistroPuestero } from './components/pantallaResgistroPuestero.js';
+import { PantallaRegistro } from './src/screens/login/pantallaRegistro.js';
 
 
-import { AppContext } from './provider/AppProvider';
+import { PantallaRegistroPuestero } from './src/screens/usuario/pantallaResgistroPuestero.js';
+
+
+import { AppContext } from './src/provider/AppProvider.js';
 import { useContext } from 'react';
-import { PantallaPuestero } from './components/pantallaPuestero.js';
-import { PantallaCargarNuevaFeria } from './components/pantallaCargarNuevaFeria.js';
-import { PantallaRegistrarPuestos } from './components/pantallaRegistrarPuestos.js';
+import { PantallaPuestero } from './src/screens/puestero/pantallaPuestero.js';
+import { PantallaCargarNuevaFeria } from './src/screens/administrador/pantallaCargarNuevaFeria.js';
+import { PantallaRegistrarPuestos } from './src/screens/administrador/pantallaRegistrarPuestos.js';
 
-import { PantallaAdminSolicitudesPuestero } from './components/pantallaAdminSolicitudesPuestero.js';
+import { PantallaAdminSolicitudesPuestero } from './src/screens/administrador/pantallaAdminSolicitudesPuestero.js';
 
-import { PantallaUserVerPuesto } from './components/pantallaUserVerPuesto.js';
-
-
-
+import { PantallaUserVerPuesto } from './src/screens/usuario/pantallaUserVerPuesto.js';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
+
+
+
+
 
 // ---------- STACK HOME ----------
 const StackHome = () => {
@@ -182,6 +183,12 @@ const StackPuestero = () => {
 
 
 
+
+
+
+
+
+
 // ---------- NAVEGACION PRINCIPAL ----------
 const NavegacionPrincipal = () => {
   const { usuario } = useContext(AppContext);
@@ -287,17 +294,6 @@ const NavegacionPrincipal = () => {
     </Tab.Navigator>
   );
 };
-
-
-
-
-
-
-
-
-
-
-
 
 
 

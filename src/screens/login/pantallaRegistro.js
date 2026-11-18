@@ -1,16 +1,16 @@
 
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  StyleSheet,
-  StatusBar,
-  ScrollView,
-  Image,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, StatusBar, ScrollView, Image, } from 'react-native';
 
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
+
+
+
+
+
+
+
+
 
 export const PantallaRegistro = ({ navigation }) => {
 
@@ -53,7 +53,7 @@ export const PantallaRegistro = ({ navigation }) => {
 
           <View style={styles.logoContenedor}>
             <Image
-              source={require('../assets/iconPlazaGO.png')}
+              source={require('../../../assets/iconPlazaGO.png')}
               style={styles.logo}
               resizeMode="contain"
             />
@@ -182,11 +182,15 @@ export const PantallaRegistro = ({ navigation }) => {
         </Text>
 
       </ScrollView>
+      
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+
+
+const styles = StyleSheet.create(
+  {
 
   contenedor: {
     flex: 1,
@@ -407,4 +411,6 @@ const styles = StyleSheet.create({
     marginTop: 25,
   },
 
-});
+}
+);
+

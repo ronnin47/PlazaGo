@@ -15,8 +15,8 @@ import {
 } from 'react-native';
 
 import axios from 'axios';
-import API_URL from '../config/apiConfig';
-import { AppContext } from '../provider/AppProvider';
+import API_URL from '../../../config/apiConfig';
+import { AppContext } from '../../provider/AppProvider';
 
 export const SeccionProductos = ({ puesto }) => {
   const { usuario } = useContext(AppContext);

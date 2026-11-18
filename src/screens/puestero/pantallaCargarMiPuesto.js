@@ -12,8 +12,8 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { AppContext } from '../provider/AppProvider';
-import API_URL from '../config/apiConfig';
+import { AppContext } from '../../provider/AppProvider';
+import API_URL from '../../../config/apiConfig';
 import axios from 'axios';
 
 import { useNavigation } from '@react-navigation/native';
@@ -613,6 +613,8 @@ Alert.alert(
     </ImageBackground>
   );
 };
+
+
 
 const styles = StyleSheet.create({
   background: {

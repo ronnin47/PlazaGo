@@ -6,11 +6,6 @@
     "orientation": "portrait",
     "icon": "./assets/iconPlazaGO.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/iconPlazaGO.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#F3F1E9"
-    },
     "ios": {
       "supportsTablet": true
     },
@@ -28,7 +23,20 @@
       "@react-native-community/datetimepicker",
       "expo-status-bar",
       "expo-font",
-      "expo-splash-screen"
-    ]
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/iconPlazaGO.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#F3F1E9",
+          "imageWidth": 200
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "52c114ef-cacd-4921-bf6c-cacbb5b891c7"
+      }
+    }
   }
 }

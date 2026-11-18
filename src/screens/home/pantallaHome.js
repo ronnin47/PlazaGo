@@ -9,18 +9,19 @@ import {
   TouchableOpacity,
   ImageBackground,
 } from 'react-native';
-import { AppContext } from '../provider/AppProvider';
+import { AppContext } from '../../provider/AppProvider.js';
 import { useEffect } from 'react';
 
 
 import { useNavigation } from '@react-navigation/native';
-import API_URL from '../config/apiConfig';
+import API_URL from '../../../config/apiConfig.js';
 
+
+import {CardPuestero} from '../../components/cardPuestero.js'
 
 console.log('API_URL en PantallaHome:', API_URL);
 import axios from 'axios';
 
-import {CardPuestero} from './cardPuestero';
 
 
 const fondoPantallaHome2="https://res.cloudinary.com/dzul1hatw/image/upload/v1792521295/Fondo_org%C3%A1nico_verde_y_dorado_komwcn.png"

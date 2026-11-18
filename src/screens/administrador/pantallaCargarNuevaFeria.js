@@ -16,8 +16,8 @@ import {
 import axios from 'axios';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { useNavigation } from '@react-navigation/native';
-import { AppContext } from '../provider/AppProvider';
-import API_URL from '../config/apiConfig';
+import { AppContext } from '../../provider/AppProvider';
+import API_URL from '../../../config/apiConfig';
 
 const FECHA_INICIAL = () => new Date();
 

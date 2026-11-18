@@ -11,7 +11,7 @@ import {
   Image,
 } from 'react-native';
 
-import { AppContext } from '../provider/AppProvider';
+import { AppContext } from '../../provider/AppProvider';
 
 export const PantallaConfiguracion = () => {
 
@@ -94,7 +94,7 @@ export const PantallaConfiguracion = () => {
        <View style={styles.filaAplicacion}>
 
   <Image
-    source={require('../assets/leo1.png')}
+    source={require('../../../assets/leo1.png')}
     style={styles.imagenLeo}
     resizeMode="contain"
   />

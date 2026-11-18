@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
-import API_URL from '../config/apiConfig';
+import API_URL from '../../../config/apiConfig';
 
 export const PantallaRegistrarPuestos = ({ route, navigation }) => {
   const { feria } = route.params || {};

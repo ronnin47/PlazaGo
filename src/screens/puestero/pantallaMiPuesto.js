@@ -12,10 +12,10 @@ import {
   Alert,
   ActivityIndicator,
 } from 'react-native';
-import { AppContext } from '../provider/AppProvider';
-import API_URL from '../config/apiConfig';
+import { AppContext } from '../../provider/AppProvider';
+import API_URL from '../../../config/apiConfig';
 import axios from 'axios';
-import { GaleriaFeriasProximas } from './galeriaFeriasProximas';
+import { GaleriaFeriasProximas } from '../../components/galeriaFeriasProximas';
 import { SeccionProductos } from './seccionProductos';
 
 const fondoPantallaConfiguracion =

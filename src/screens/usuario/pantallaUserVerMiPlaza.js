@@ -14,9 +14,14 @@ import {
 } from 'react-native';
 
 import axios from 'axios';
-import API_URL from '../config/apiConfig';
-import { AppContext } from '../provider/AppProvider';
+import API_URL from '../../../config/apiConfig';
+import { AppContext } from '../../provider/AppProvider';
 
+
+
+
+//Esta es la pantalla del tab mis puestos
+//mantiene el title de "mi plaza" pero el tab le deje "mis puestos"
 export const PantallaUserVerMiPlaza = ({ navigation }) => {
 
   const { usuario } = useContext(AppContext);

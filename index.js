@@ -1,6 +1,6 @@
 import { registerRootComponent } from 'expo';
 import App from './App';
-import { AppProvider } from './provider/AppProvider';
+import { AppProvider } from './src/provider/AppProvider';
 
 const Aplicacion = () => (
   <AppProvider>

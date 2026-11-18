@@ -13,7 +13,7 @@ import {
 import { useState } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import axios from 'axios';
-import API_URL from '../config/apiConfig';
+import API_URL from '../../../config/apiConfig';
 
 export const PantallaRegistroPuestero = ({ navigation }) => {
 
@@ -99,7 +99,7 @@ export const PantallaRegistroPuestero = ({ navigation }) => {
         <View style={styles.encabezado}>
           <View style={styles.logoContenedor}>
             <Image
-              source={require('../assets/iconPlazaGO.png')}
+              source={require('../../../assets/iconPlazaGO.png')}
               style={styles.logo}
               resizeMode="contain"
             />
