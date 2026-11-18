@@ -11,15 +11,8 @@ import {
 export const CardPuestero = ({ puesto, onPress,esFavorito  }) => {
 
 
-  console.log(
-  'CARD:',
-  puesto.id_puesto,
-  'FAVORITO:',
-  esFavorito,
-  'TIPO:',
-  typeof esFavorito
-);
 
+// iteramos los referente de la prop pueto, agarramos tres y tomamos nombr e imagen
   const referentes = (puesto.referentes || [])
     .slice(0, 3)
     .map((referente) => ({
@@ -32,6 +25,9 @@ export const CardPuestero = ({ puesto, onPress,esFavorito  }) => {
         : null,
     }))
     .filter(referente => referente.nombre);
+
+
+
 
   const inicialMarca = (puesto.nombre_puesto || '?')
     .charAt(0)
